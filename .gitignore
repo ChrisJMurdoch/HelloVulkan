@@ -1,0 +1,7 @@
+
+# Build scripts and artefacts
+/_.bat
+/_/
+
+# VSCode
+/.vscode/
