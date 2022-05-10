@@ -26,6 +26,10 @@ std::vector<const char*> const validationLayers = { "VK_LAYER_KHRONOS_validation
 std::vector<const char*> const deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 bool const ENABLE_VALIDATION_LAYERS = true;
 
+// Inline error checking
+inline void nullThrow (void *value,    char const *message = "Error: null value")         { if (value == nullptr)    throw std::exception(message); }
+inline void failThrow (VkResult value, char const *message = "Error: vulkan call failed") { if (value != VK_SUCCESS) throw std::exception(message); }
+
 // Exception debug callback, called by validation layers
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     
@@ -70,6 +74,7 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
 
+    QueueFamilyIndices qIndices;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
 
@@ -123,6 +128,7 @@ private:
         setupDebugMessenger();
         createSurface();
         pickPhysicalDevice();
+        this->qIndices = getQueueIndices();
         createLogicalDevice();
         createSwapChain();
         createImageViews();
@@ -240,8 +246,7 @@ private:
         };
 
         // Create instance
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
-            throw std::exception("Failed to create instance.");
+        failThrow( vkCreateInstance(&createInfo, nullptr, &instance), "Failed to create instance." );
     }
 
     void setupDebugMessenger() {
@@ -249,50 +254,83 @@ private:
         // Skip if no validation layers are active
         if (!ENABLE_VALIDATION_LAYERS)
             return;
-
-        // populateDebugMessengerCreateInfo(createInfo);
-
+        
         // Retrieve function pointer
         auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if (createDebugUtilsMessenger == nullptr)
-            throw std::exception("Failed to set up debug messenger");
+        nullThrow( createDebugUtilsMessenger, "Failed to set up debug messenger." );
         
         // Create messenger
-        if (createDebugUtilsMessenger(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS)
-            throw std::exception("failed to set up debug messenger");
+        failThrow( createDebugUtilsMessenger(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to set up debug messenger." );
     }
 
-    void createSurface() {
-        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface!");
-        }
+    void createSurface()
+    {
+        failThrow( glfwCreateWindowSurface(instance, window, nullptr, &surface), "Failed to create window surface." );
     }
 
-    void pickPhysicalDevice() {
+    void pickPhysicalDevice()
+    {
+        // Get physical devices
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        if (deviceCount == 0)
+            throw std::exception("Failed to find GPUs with Vulkan support");
+        std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data());
 
-        if (deviceCount == 0) {
-            throw std::runtime_error("failed to find GPUs with Vulkan support!");
-        }
-
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-        for (const auto& device : devices) {
-            if (isDeviceSuitable(device)) {
-                physicalDevice = device;
+        // Select first suitable device
+        for (VkPhysicalDevice const &physicalDevice : physicalDevices) {
+            std::cout << "Device checked" << std::endl;
+            if (isDeviceSuitable(physicalDevice)) {
+                std::cout << "Device found" << std::endl;
+                this->physicalDevice = physicalDevice;
                 break;
             }
         }
 
-        if (physicalDevice == VK_NULL_HANDLE) {
-            throw std::runtime_error("failed to find a suitable GPU!");
-        }
+        // Ensure device is found
+        if (physicalDevice == VK_NULL_HANDLE)
+            throw std::exception("Failed to find a suitable GPU");
     }
 
-    void createLogicalDevice() {
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+    QueueFamilyIndices getQueueIndices(VkPhysicalDevice  const &physicalDevice = nullptr)
+    {
+        // If no physical device is provided, use currently bound
+        VkPhysicalDevice const &physDevice = physicalDevice==nullptr ? this->physicalDevice : physicalDevice;
+
+        // Get queue families
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, queueFamilies.data());
+
+        // Get queue family indices
+        QueueFamilyIndices indices;
+        for (int i=0; i<queueFamilies.size(); i++)
+        {
+            VkQueueFamilyProperties const &queueFamily = queueFamilies[i];
+
+            // Get graphics family
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                indices.graphicsFamily = i;
+
+            // Get present family
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(physDevice, i, surface, &presentSupport);
+            if (presentSupport)
+                indices.presentFamily = i;
+
+            // Stop looking if complete
+            if (indices.isComplete())
+                break;
+        }
+
+        return indices;
+    }
+
+    void createLogicalDevice()
+    {
+        QueueFamilyIndices indices = this->qIndices;
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -327,9 +365,7 @@ private:
             createInfo.enabledLayerCount = 0;
         }
 
-        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create logical device!");
-        }
+        failThrow( vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device" );
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
@@ -358,7 +394,7 @@ private:
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        QueueFamilyIndices indices = this->qIndices;
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily) {
@@ -374,9 +410,7 @@ private:
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
 
-        if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create swap chain!");
-        }
+        failThrow( vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain), "Failed to create swap chain" );
 
         vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
         swapChainImages.resize(imageCount);
@@ -589,7 +623,7 @@ private:
     }
 
     void createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+        QueueFamilyIndices queueFamilyIndices = this->qIndices;
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -805,14 +839,15 @@ private:
         return details;
     }
 
-    bool isDeviceSuitable(VkPhysicalDevice device) {
-        QueueFamilyIndices indices = findQueueFamilies(device);
+    bool isDeviceSuitable(VkPhysicalDevice physicalDevice) {
+        
+        QueueFamilyIndices indices = getQueueIndices(physicalDevice);
 
-        bool extensionsSupported = checkDeviceExtensionSupport(device);
+        bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice);
 
         bool swapChainAdequate = false;
         if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
 
@@ -833,38 +868,6 @@ private:
         }
 
         return requiredExtensions.empty();
-    }
-
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
-    {
-        // Get queue families
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-        // Get queue family indices
-        QueueFamilyIndices queueFamilyIndices;
-        for (int i=0; i<queueFamilies.size(); i++)
-        {
-            VkQueueFamilyProperties const &queueFamily = queueFamilies[i];
-
-            // Get graphics family
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                queueFamilyIndices.graphicsFamily = i;
-
-            // Get present family
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-            if (presentSupport)
-                queueFamilyIndices.presentFamily = i;
-
-            // Stop looking if complete
-            if (queueFamilyIndices.isComplete())
-                break;
-        }
-
-        return queueFamilyIndices;
     }
 
     std::vector<const char*> getRequiredExtensions() {
