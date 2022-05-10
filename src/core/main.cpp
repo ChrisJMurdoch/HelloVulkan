@@ -15,6 +15,7 @@
 #include <limits>
 #include <optional>
 #include <set>
+#include <bitset>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -34,10 +35,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
     return VK_FALSE;
 }
 
+// Store the indices of each queue family
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
-
     bool isComplete() {
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
@@ -778,26 +779,24 @@ private:
         }
     }
 
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &device)
+    {
         SwapChainSupportDetails details;
 
+        // Get capabilities
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+        // Get surface formats
+        uint32_t nFormats;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &nFormats, nullptr);
+        details.formats.resize(nFormats);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &nFormats, details.formats.data());
 
-        if (formatCount != 0) {
-            details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-        }
-
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-        if (presentModeCount != 0) {
-            details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-        }
+        // Get present modes
+        uint32_t nPresentModes;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &nPresentModes, nullptr);
+        details.presentModes.resize(nPresentModes);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &nPresentModes, details.presentModes.data());
 
         return details;
     }
@@ -832,36 +831,36 @@ private:
         return requiredExtensions.empty();
     }
 
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
-        QueueFamilyIndices indices;
-
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+    {
+        // Get queue families
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-        int i = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                indices.graphicsFamily = i;
-            }
+        // Get queue family indices
+        QueueFamilyIndices queueFamilyIndices;
+        for (int i=0; i<queueFamilies.size(); i++)
+        {
+            VkQueueFamilyProperties const &queueFamily = queueFamilies[i];
 
+            // Get graphics family
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                queueFamilyIndices.graphicsFamily = i;
+
+            // Get present family
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            if (presentSupport)
+                queueFamilyIndices.presentFamily = i;
 
-            if (presentSupport) {
-                indices.presentFamily = i;
-            }
-
-            if (indices.isComplete()) {
+            // Stop looking if complete
+            if (queueFamilyIndices.isComplete())
                 break;
-            }
-
-            i++;
         }
 
-        return indices;
+        return queueFamilyIndices;
     }
 
     std::vector<const char*> getRequiredExtensions() {
