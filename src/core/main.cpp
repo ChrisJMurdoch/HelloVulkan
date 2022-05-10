@@ -35,7 +35,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
     return VK_FALSE;
 }
 
-// Store the indices of each queue family
+// Store indices of each queue family
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
@@ -44,6 +44,7 @@ struct QueueFamilyIndices {
     }
 };
 
+// Store details of the swapchain
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
@@ -60,7 +61,7 @@ public:
     }
 
 private:
-    GLFWwindow* window;
+    GLFWwindow *window;
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -93,7 +94,7 @@ private:
 
     bool framebufferResized = false;
 
-    VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo =
+    VkDebugUtilsMessengerCreateInfoEXT const debugMessengerCreateInfo =
     {
         .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
         .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
@@ -101,22 +102,23 @@ private:
         .pfnUserCallback = debugCallback
     };
 
-    void initWindow() {
+    void initWindow()
+    {
         glfwInit();
-
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        window = glfwCreateWindow(WIDTH, HEIGHT, "HelloVulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
     }
 
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
+    {
+        HelloTriangleApplication *app = reinterpret_cast<HelloTriangleApplication *>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
     }
 
-    void initVulkan() {
+    void initVulkan()
+    {
         createInstance();
         setupDebugMessenger();
         createSurface();
@@ -132,35 +134,38 @@ private:
         createSyncObjects();
     }
 
-    void mainLoop() {
-        while (!glfwWindowShouldClose(window)) {
+    void mainLoop()
+    {
+        while (!glfwWindowShouldClose(window))
+        {
             glfwPollEvents();
             drawFrame();
         }
-
-        vkDeviceWaitIdle(device);
     }
 
-    void cleanupSwapChain() {
-        for (auto framebuffer : swapChainFramebuffers) {
+    void cleanupSwapChain()
+    {
+        for (VkFramebuffer const &framebuffer : swapChainFramebuffers)
             vkDestroyFramebuffer(device, framebuffer, nullptr);
-        }
 
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
 
-        for (auto imageView : swapChainImageViews) {
+        for (auto imageView : swapChainImageViews)
             vkDestroyImageView(device, imageView, nullptr);
-        }
 
         vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 
-    void cleanup() {
+    void cleanup()
+    {
+        vkDeviceWaitIdle(device);
+
         cleanupSwapChain();
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
             vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(device, inFlightFences[i], nullptr);
@@ -170,7 +175,8 @@ private:
 
         vkDestroyDevice(device, nullptr);
 
-        if (ENABLE_VALIDATION_LAYERS) {
+        if (ENABLE_VALIDATION_LAYERS)
+        {
             auto destroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
             if (destroyDebugUtilsMessenger != nullptr)
                 destroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
@@ -184,18 +190,22 @@ private:
         glfwTerminate();
     }
 
-    void recreateSwapChain() {
-        int width = 0, height = 0;
+    void recreateSwapChain()
+    {
+        // Get dimensions and block until window is visible
+        int width=0, height=0;
         glfwGetFramebufferSize(window, &width, &height);
-        while (width == 0 || height == 0) {
+        while (width == 0 || height == 0)
+        {
             glfwGetFramebufferSize(window, &width, &height);
             glfwWaitEvents();
         }
 
+        // Cleanup old chain
         vkDeviceWaitIdle(device);
-
         cleanupSwapChain();
 
+        // Create and activate new chain
         createSwapChain();
         createImageViews();
         createRenderPass();
@@ -203,41 +213,35 @@ private:
         createFramebuffers();
     }
 
-    void createInstance() {
-        if (ENABLE_VALIDATION_LAYERS && !checkValidationLayerSupport()) {
-            throw std::runtime_error("validation layers requested, but not available!");
-        }
+    void createInstance()
+    {
+        // Check validation layer support
+        if (ENABLE_VALIDATION_LAYERS && !checkValidationLayerSupport())
+            throw std::exception("Validation layers active but not supported.");
 
-        VkApplicationInfo appInfo{};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "Hello Triangle";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_0;
+        // Generate create info
+        VkApplicationInfo appInfo{
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .pApplicationName = "Hello Triangle",
+            .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+            .pEngineName = "No Engine",
+            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+            .apiVersion = VK_API_VERSION_1_0
+        };
+        std::vector<const char *> extensions = getRequiredExtensions();
+        VkInstanceCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            .pNext =                ENABLE_VALIDATION_LAYERS ? (VkDebugUtilsMessengerCreateInfoEXT*) &debugMessengerCreateInfo : nullptr,
+            .pApplicationInfo = &appInfo,
+            .enabledLayerCount =    ENABLE_VALIDATION_LAYERS ? static_cast<uint32_t>(validationLayers.size()) : 0,
+            .ppEnabledLayerNames =  ENABLE_VALIDATION_LAYERS ? validationLayers.data() : nullptr,
+            .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
+            .ppEnabledExtensionNames = extensions.data()
+        };
 
-        VkInstanceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
-
-        auto extensions = getRequiredExtensions();
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-        createInfo.ppEnabledExtensionNames = extensions.data();
-
-        if (ENABLE_VALIDATION_LAYERS) {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-            createInfo.ppEnabledLayerNames = validationLayers.data();
-
-            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugMessengerCreateInfo;
-        } else {
-            createInfo.enabledLayerCount = 0;
-
-            createInfo.pNext = nullptr;
-        }
-
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create instance!");
-        }
+        // Create instance
+        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+            throw std::exception("Failed to create instance.");
     }
 
     void setupDebugMessenger() {
