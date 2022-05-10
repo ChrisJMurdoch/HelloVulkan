@@ -1,7 +1,10 @@
 
+# VSCode
+/.vscode/
+
 # Build scripts and artefacts
 /_.bat
 /_/
 
-# VSCode
-/.vscode/
+# Generated data
+/shaders/bin/
