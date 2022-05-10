@@ -31,6 +31,7 @@ add_executable(${APP_NAME})
 target_sources(${APP_NAME}
     PRIVATE
         src/core/main.cpp
+        src/utility/io.cpp
 )
 
 # Add includes
