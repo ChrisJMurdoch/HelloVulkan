@@ -4,20 +4,13 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "display/common.hpp"
 #include "display/renderPass.hpp"
 #include "display/pipeline.hpp"
+#include "display/commandPool.hpp"
 
 #include <optional>
 #include <vector>
-
-// Store indices of each queue family
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-    bool isComplete() {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
 
 // Store details of the swapchain
 struct SwapChainSupportDetails {
@@ -56,8 +49,7 @@ private:
     RenderPass *renderPass;
     Pipeline *pipeline;
 
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
+    CommandPool *commandPool;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -90,7 +82,6 @@ private:
         void createGraphicsPipeline();
         void createFramebuffers();
         void createCommandPool();
-        void createCommandBuffers();
         void createSyncObjects();
 
     // Main render loop

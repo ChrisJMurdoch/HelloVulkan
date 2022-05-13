@@ -39,6 +39,7 @@ target_sources(${APP_NAME}
         src/display/renderPass.cpp
         src/display/shaderModule.cpp
         src/display/pipeline.cpp
+        src/display/commandPool.cpp
 )
 
 # Add includes

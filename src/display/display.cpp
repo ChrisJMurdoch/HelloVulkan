@@ -84,7 +84,6 @@ void Display::initVulkan()
     createGraphicsPipeline();
     createFramebuffers();
     createCommandPool();
-    createCommandBuffers();
     createSyncObjects();
 }
 
@@ -110,7 +109,7 @@ void Display::cleanup()
         vkDestroyFence(device, inFlightFences[i], nullptr);
     }
 
-    vkDestroyCommandPool(device, commandPool, nullptr);
+    delete commandPool;
 
     vkDestroyDevice(device, nullptr);
 
@@ -437,27 +436,7 @@ void Display::createFramebuffers()
 
 void Display::createCommandPool()
 {
-    VkCommandPoolCreateInfo poolInfo{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = this->qIndices.graphicsFamily.value()
-    };
-    failThrow( vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool), "Failed to create command pool." );
-}
-
-void Display::createCommandBuffers()
-{
-    // One command buffer for each frame
-    commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-    // Allocate command buffers
-    VkCommandBufferAllocateInfo allocInfo{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .commandPool = commandPool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = (uint32_t) commandBuffers.size()
-    };
-    failThrow( vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()), "Failed to allocate command buffers" );
+    commandPool = new CommandPool(device, qIndices, MAX_FRAMES_IN_FLIGHT);
 }
 
 void Display::createSyncObjects()
@@ -507,9 +486,9 @@ void Display::drawFrame()
     
     // Reset frame resources
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
-    vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+    vkResetCommandBuffer(commandPool->getBuffers()[currentFrame], 0);
 
-    recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
+    recordCommandBuffer(commandPool->getBuffers()[currentFrame], imageIndex);
 
     // Submit queue
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
@@ -521,7 +500,7 @@ void Display::drawFrame()
         .pWaitSemaphores = waitSemaphores,
         .pWaitDstStageMask = waitStages,
         .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffers[currentFrame],
+        .pCommandBuffers = &commandPool->getBuffers()[currentFrame],
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = signalSemaphores
     };
