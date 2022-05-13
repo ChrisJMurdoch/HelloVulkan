@@ -40,6 +40,7 @@ target_sources(${APP_NAME}
         src/display/shaderModule.cpp
         src/display/pipeline.cpp
         src/display/commandPool.cpp
+        src/display/instance.cpp
 )
 
 # Add includes

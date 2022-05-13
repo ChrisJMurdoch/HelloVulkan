@@ -8,6 +8,7 @@
 #include "display/renderPass.hpp"
 #include "display/pipeline.hpp"
 #include "display/commandPool.hpp"
+#include "display/instance.hpp"
 
 #include <optional>
 #include <vector>
@@ -28,7 +29,7 @@ public:
 private:
     GLFWwindow *window;
 
-    VkInstance instance;
+    Instance *instance;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkSurfaceKHR surface;
 
@@ -66,9 +67,6 @@ private:
 
     // Vulkan initialisation
     void initVulkan();
-        void createInstance();
-            std::vector<char const *> getRequiredExtensions();
-            bool checkValidationLayerSupport();
         void setupDebugMessenger();
         void createSurface();
         void pickPhysicalDevice();
