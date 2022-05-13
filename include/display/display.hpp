@@ -9,6 +9,7 @@
 #include "display/pipeline.hpp"
 #include "display/commandPool.hpp"
 #include "display/instance.hpp"
+#include "display/debugMessenger.hpp"
 
 #include <optional>
 #include <vector>
@@ -30,7 +31,7 @@ private:
     GLFWwindow *window;
 
     Instance *instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
+    DebugMessenger *debugMessenger;
     VkSurfaceKHR surface;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -67,7 +68,6 @@ private:
 
     // Vulkan initialisation
     void initVulkan();
-        void setupDebugMessenger();
         void createSurface();
         void pickPhysicalDevice();
             bool isDeviceSuitable(VkPhysicalDevice physicalDevice);

@@ -31,21 +31,6 @@ std::vector<const char*> const deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME
 inline void nullThrow (void *value,    char const *message = "Error: null value")         { if (value == nullptr)    throw std::exception(message); }
 inline void failThrow (VkResult value, char const *message = "Error: vulkan call failed") { if (value != VK_SUCCESS) throw std::exception(message); }
 
-// Exception debug callback, called by validation layers
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
-    if (messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-    return VK_FALSE;
-}
-
-VkDebugUtilsMessengerCreateInfoEXT const debugMessengerCreateInfo =
-{
-    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-    .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-    .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-    .pfnUserCallback = debugCallback
-};
-
 // PUBLIC FUNCTIONS
 
 Display::Display(int windowWidth, int windowHeight)
@@ -59,8 +44,6 @@ void Display::run() {
     cleanup();
 }
 
-// TIER 1
-
 void Display::initGlfw(int windowWidth, int windowHeight)
 {
     glfwInit();
@@ -69,11 +52,16 @@ void Display::initGlfw(int windowWidth, int windowHeight)
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
+void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+    Display *display = reinterpret_cast<Display *>(glfwGetWindowUserPointer(window));
+    display->framebufferResized = true;
+}
 
 void Display::initVulkan()
 {
-    instance = new Instance(debugMessengerCreateInfo, validationLayers);
-    setupDebugMessenger();
+    instance = new Instance(DebugMessenger::debugMessengerCreateInfo, validationLayers);
+    debugMessenger = new DebugMessenger(instance);
     createSurface();
     pickPhysicalDevice();
     this->qIndices = getQueueIndices();
@@ -113,9 +101,7 @@ void Display::cleanup()
 
     vkDestroyDevice(device, nullptr);
 
-    auto destroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance->getHandle(), "vkDestroyDebugUtilsMessengerEXT");
-    if (destroyDebugUtilsMessenger != nullptr)
-        destroyDebugUtilsMessenger(instance->getHandle(), debugMessenger, nullptr);
+    delete debugMessenger;
 
     vkDestroySurfaceKHR(instance->getHandle(), surface, nullptr);
     delete instance;
@@ -123,14 +109,6 @@ void Display::cleanup()
     glfwDestroyWindow(window);
 
     glfwTerminate();
-}
-
-// TIER 2
-
-void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
-{
-    Display *display = reinterpret_cast<Display *>(glfwGetWindowUserPointer(window));
-    display->framebufferResized = true;
 }
 
 void Display::cleanupSwapChain()
@@ -168,16 +146,6 @@ void Display::recreateSwapChain()
     createRenderPass();
     createGraphicsPipeline();
     createFramebuffers();
-}
-
-void Display::setupDebugMessenger() {
-
-    // Retrieve function pointer
-    auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance->getHandle(), "vkCreateDebugUtilsMessengerEXT");
-    nullThrow( createDebugUtilsMessenger, "Failed to set up debug messenger." );
-    
-    // Create messenger
-    failThrow( createDebugUtilsMessenger(instance->getHandle(), &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to set up debug messenger." );
 }
 
 void Display::createSurface()
