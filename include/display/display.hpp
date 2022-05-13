@@ -89,7 +89,6 @@ private:
         void createImageViews();
         void createRenderPass();
         void createGraphicsPipeline();
-            VkShaderModule createShaderModule(std::vector<char> const &code);
         void createFramebuffers();
         void createCommandPool();
         void createCommandBuffers();

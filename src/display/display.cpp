@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include "display/choose.hpp"
+#include "display/shaderModule.hpp"
 #include "utility/io.hpp"
 
 #include <iostream>
@@ -401,21 +402,21 @@ void Display::createGraphicsPipeline()
     std::vector<char> vertShaderCode = io::readFile("shaders/bin/shader.vert.spv", std::ios::binary);
     std::vector<char> fragShaderCode = io::readFile("shaders/bin/shader.frag.spv", std::ios::binary);
 
-    // Compile shaders
-    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+    // Create shaders
+    ShaderModule *vertShaderModule = new ShaderModule(device, vertShaderCode);
+    ShaderModule *fragShaderModule = new ShaderModule(device, fragShaderCode);
 
     // Create pipeline layout
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_VERTEX_BIT,
-        .module = vertShaderModule,
+        .module = vertShaderModule->getHandle(),
         .pName = "main"
     };
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .module = fragShaderModule,
+        .module = fragShaderModule->getHandle(),
         .pName = "main"
     };
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
@@ -501,8 +502,8 @@ void Display::createGraphicsPipeline()
     failThrow( vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline), "Failed to create graphics pipeline" );
 
     // Clean up shaders
-    vkDestroyShaderModule(device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(device, vertShaderModule, nullptr);
+    delete fragShaderModule;
+    delete vertShaderModule;
 }
 
 void Display::createFramebuffers()
@@ -679,18 +680,6 @@ void Display::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageI
     vkCmdEndRenderPass(commandBuffer);
 
     failThrow( vkEndCommandBuffer(commandBuffer), "Failed to record command buffer." );
-}
-
-VkShaderModule Display::createShaderModule(std::vector<char> const &code)
-{
-    VkShaderModuleCreateInfo createInfo{
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = code.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(code.data())
-    };
-    VkShaderModule shaderModule;
-    failThrow( vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule), "Failed to create shader module." );
-    return shaderModule;
 }
 
 SwapChainSupportDetails Display::querySwapChainSupport(VkPhysicalDevice const &physicalDevice)
