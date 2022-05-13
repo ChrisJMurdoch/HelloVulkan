@@ -38,6 +38,7 @@ target_sources(${APP_NAME}
         src/display/choose.cpp
         src/display/renderPass.cpp
         src/display/shaderModule.cpp
+        src/display/pipeline.cpp
 )
 
 # Add includes

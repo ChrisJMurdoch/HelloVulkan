@@ -1,6 +1,8 @@
 
 #include "display/display.hpp"
 
+#include <iostream>
+
 int main()
 {
     try
@@ -14,5 +16,6 @@ int main()
         return EXIT_FAILURE;
     }
 
+    std::cerr << "Application shut down gracefully." << std::endl;
     return EXIT_SUCCESS;
 }

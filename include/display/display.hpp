@@ -5,10 +5,10 @@
 #include <GLFW/glfw3.h>
 
 #include "display/renderPass.hpp"
+#include "display/pipeline.hpp"
 
 #include <optional>
 #include <vector>
-#include <iostream>
 
 // Store indices of each queue family
 struct QueueFamilyIndices {
@@ -54,8 +54,7 @@ private:
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
     RenderPass *renderPass;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
+    Pipeline *pipeline;
 
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;

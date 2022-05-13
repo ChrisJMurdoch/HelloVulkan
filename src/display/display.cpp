@@ -139,8 +139,7 @@ void Display::cleanupSwapChain()
     for (VkFramebuffer const &framebuffer : swapChainFramebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
-    vkDestroyPipeline(device, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    delete pipeline;
     delete renderPass;
 
     for (auto imageView : swapChainImageViews)
@@ -393,7 +392,7 @@ void Display::createImageViews()
 
 void Display::createRenderPass()
 {
-    renderPass = new RenderPass(swapChainImageFormat, device);
+    renderPass = new RenderPass(device, swapChainImageFormat);
 }
 
 void Display::createGraphicsPipeline()
@@ -406,100 +405,7 @@ void Display::createGraphicsPipeline()
     ShaderModule *vertShaderModule = new ShaderModule(device, vertShaderCode);
     ShaderModule *fragShaderModule = new ShaderModule(device, fragShaderCode);
 
-    // Create pipeline layout
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = VK_SHADER_STAGE_VERTEX_BIT,
-        .module = vertShaderModule->getHandle(),
-        .pName = "main"
-    };
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .module = fragShaderModule->getHandle(),
-        .pName = "main"
-    };
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 0,
-        .vertexAttributeDescriptionCount = 0
-    };
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        .primitiveRestartEnable = VK_FALSE
-    };
-    VkViewport viewport{
-        .x = 0.0f,
-        .y = 0.0f,
-        .width = (float) swapChainExtent.width,
-        .height = (float) swapChainExtent.height,
-        .minDepth = 0.0f,
-        .maxDepth = 1.0f
-    };
-    VkRect2D scissor{
-        .offset = {0, 0},
-        .extent = swapChainExtent
-    };
-    VkPipelineViewportStateCreateInfo viewportState{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .viewportCount = 1,
-        .pViewports = &viewport,
-        .scissorCount = 1,
-        .pScissors = &scissor
-    };
-    VkPipelineRasterizationStateCreateInfo rasterizer{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .depthClampEnable = VK_FALSE,
-        .rasterizerDiscardEnable = VK_FALSE,
-        .polygonMode = VK_POLYGON_MODE_FILL,
-        .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_CLOCKWISE,
-        .depthBiasEnable = VK_FALSE,
-        .lineWidth = 1.0f
-    };
-    VkPipelineMultisampleStateCreateInfo multisampling{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-        .sampleShadingEnable = VK_FALSE
-    };
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{
-        .blendEnable = VK_FALSE,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-    };
-    VkPipelineColorBlendStateCreateInfo colorBlending{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .logicOpEnable = VK_FALSE,
-        .logicOp = VK_LOGIC_OP_COPY,
-        .attachmentCount = 1,
-        .pAttachments = &colorBlendAttachment,
-        .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}
-    };
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 0,
-        .pushConstantRangeCount = 0
-    };
-    failThrow( vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout),  "Failed to create pipeline layout.");
-
-    // Create pipeline
-    VkGraphicsPipelineCreateInfo pipelineInfo{
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .stageCount = 2,
-        .pStages = shaderStages,
-        .pVertexInputState = &vertexInputInfo,
-        .pInputAssemblyState = &inputAssembly,
-        .pViewportState = &viewportState,
-        .pRasterizationState = &rasterizer,
-        .pMultisampleState = &multisampling,
-        .pColorBlendState = &colorBlending,
-        .layout = pipelineLayout,
-        .renderPass = renderPass->getHandle(),
-        .subpass = 0,
-        .basePipelineHandle = VK_NULL_HANDLE
-    };
-    failThrow( vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline), "Failed to create graphics pipeline" );
+    pipeline = new Pipeline(device, vertShaderModule, fragShaderModule, renderPass, swapChainExtent);
 
     // Clean up shaders
     delete fragShaderModule;
@@ -673,7 +579,7 @@ void Display::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageI
     };
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getHandle());
 
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 

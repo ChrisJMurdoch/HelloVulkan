@@ -5,7 +5,7 @@
 
 #include <exception>
 
-RenderPass::RenderPass(VkFormat const &format, VkDevice const &device) : device(device)
+RenderPass::RenderPass(VkDevice const &device, VkFormat const &format) : device(device)
 {
     VkAttachmentDescription colorAttachment{
         .format = format,

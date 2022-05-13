@@ -10,7 +10,7 @@ private:
     VkRenderPass handle;
 
 public:
-    RenderPass(VkFormat const &format, VkDevice const &device);
+    RenderPass(VkDevice const &device, VkFormat const &format);
     ~RenderPass();
     VkRenderPass const &getHandle() const;
 };
