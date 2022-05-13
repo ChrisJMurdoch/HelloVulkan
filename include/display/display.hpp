@@ -4,6 +4,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "display/renderPass.hpp"
+
 #include <optional>
 #include <vector>
 #include <iostream>
@@ -51,7 +53,7 @@ private:
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
-    VkRenderPass renderPass;
+    RenderPass *renderPass;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
 

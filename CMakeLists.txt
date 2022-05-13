@@ -31,9 +31,12 @@ add_executable(${APP_NAME})
 target_sources(${APP_NAME}
     PRIVATE
         src/core/main.cpp
-        src/core/display.cpp
-        src/core/choose.cpp
+        
         src/utility/io.cpp
+
+        src/display/display.cpp
+        src/display/renderPass.cpp
+        src/display/choose.cpp
 )
 
 # Add includes

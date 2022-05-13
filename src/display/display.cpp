@@ -1,10 +1,10 @@
 
-#include "core/display.hpp"
+#include "display/display.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "core/choose.hpp"
+#include "display/choose.hpp"
 #include "utility/io.hpp"
 
 #include <iostream>
@@ -140,7 +140,7 @@ void Display::cleanupSwapChain()
 
     vkDestroyPipeline(device, graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-    vkDestroyRenderPass(device, renderPass, nullptr);
+    delete renderPass;
 
     for (auto imageView : swapChainImageViews)
         vkDestroyImageView(device, imageView, nullptr);
@@ -392,44 +392,7 @@ void Display::createImageViews()
 
 void Display::createRenderPass()
 {
-    // Create render pass
-    VkAttachmentDescription colorAttachment{
-        .format = swapChainImageFormat,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-    };
-    VkAttachmentReference colorAttachmentRef{
-        colorAttachmentRef.attachment = 0,
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    };
-    VkSubpassDescription subpass{
-        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachmentRef
-    };
-    VkSubpassDependency dependency{
-        .srcSubpass = VK_SUBPASS_EXTERNAL,
-        .dstSubpass = 0,
-        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = 0,
-        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-    };
-    VkRenderPassCreateInfo renderPassInfo{
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-        .attachmentCount = 1,
-        .pAttachments = &colorAttachment,
-        .subpassCount = 1,
-        .pSubpasses = &subpass,
-        .dependencyCount = 1,
-        .pDependencies = &dependency
-    };
-    failThrow( vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass), "Failed to create render pass." );
+    renderPass = new RenderPass(swapChainImageFormat, device);
 }
 
 void Display::createGraphicsPipeline()
@@ -531,7 +494,7 @@ void Display::createGraphicsPipeline()
         .pMultisampleState = &multisampling,
         .pColorBlendState = &colorBlending,
         .layout = pipelineLayout,
-        .renderPass = renderPass,
+        .renderPass = renderPass->getHandle(),
         .subpass = 0,
         .basePipelineHandle = VK_NULL_HANDLE
     };
@@ -554,7 +517,7 @@ void Display::createFramebuffers()
         VkImageView attachments[] = { swapChainImageViews[i] };
         VkFramebufferCreateInfo framebufferInfo{
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-            .renderPass = renderPass,
+            .renderPass = renderPass->getHandle(),
             .attachmentCount = 1,
             .pAttachments = attachments,
             .width = swapChainExtent.width,
@@ -698,7 +661,7 @@ void Display::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageI
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     VkRenderPassBeginInfo renderPassInfo{
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        .renderPass = renderPass,
+        .renderPass = renderPass->getHandle(),
         .framebuffer = swapChainFramebuffers[imageIndex],
         .renderArea{
             .offset = {0, 0},

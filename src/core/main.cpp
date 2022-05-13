@@ -1,5 +1,5 @@
 
-#include "core/display.hpp"
+#include "display/display.hpp"
 
 int main()
 {
