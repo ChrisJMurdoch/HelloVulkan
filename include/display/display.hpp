@@ -13,6 +13,7 @@
 #include "display/device.hpp"
 #include "display/window.hpp"
 #include "display/surface.hpp"
+#include "display/swapchain.hpp"
 
 #include <optional>
 #include <vector>
@@ -30,17 +31,9 @@ private:
     PhysicalDevice *physicalDevice; // TODO - possibly move or change to heap allocation
     Device *device;
     uint32_t graphicsQueueFamilyIndex;
-    RenderPass *renderPass;
-    Pipeline *pipeline;
     CommandPool *commandPool;
     Surface *surface;
-
-    VkSwapchainKHR swapChain;
-    std::vector<VkImage> swapChainImages;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-    std::vector<VkImageView> swapChainImageViews;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
+    Swapchain *swapChain;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -55,20 +48,13 @@ private:
 
     // Vulkan initialisation
     void initVulkan();
-        void createSwapChain();
-        void createImageViews();
-        void createFramebuffers();
         void createSyncObjects();
 
     // Main render loop
     void mainLoop();
         void drawFrame();
-            void recreateSwapChain();
             void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
     // Free device memory
     void cleanup();
-
-    // Referenced by multiple methods
-    void cleanupSwapChain();
 };
