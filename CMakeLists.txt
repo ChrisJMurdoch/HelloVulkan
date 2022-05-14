@@ -42,6 +42,7 @@ target_sources(${APP_NAME}
         src/display/commandPool.cpp
         src/display/instance.cpp
         src/display/debugMessenger.cpp
+        src/display/physicalDevice.cpp
 )
 
 # Add includes

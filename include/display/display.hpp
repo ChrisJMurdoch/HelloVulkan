@@ -9,16 +9,10 @@
 #include "display/commandPool.hpp"
 #include "display/instance.hpp"
 #include "display/debugMessenger.hpp"
+#include "display/physicalDevice.hpp"
 
 #include <optional>
 #include <vector>
-
-// Store details of the swapchain
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
 
 class Display
 {
@@ -33,7 +27,7 @@ private:
     DebugMessenger *debugMessenger;
     VkSurfaceKHR surface;
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    PhysicalDevice *physicalDevice; // TODO - possibly mnove or change to heap allocation
     VkDevice device;
 
     uint32_t graphicsQueueFamilyIndex;
@@ -68,9 +62,7 @@ private:
     void initVulkan();
         void createSurface();
         void pickPhysicalDevice();
-            bool isDeviceSuitable(VkPhysicalDevice physicalDevice);
-                bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-        uint32_t getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice);
+        uint32_t getGraphicsQueueFamilyIndex(PhysicalDevice const *physicalDevice);
         void createLogicalDevice();
         void createSwapChain();
         void createImageViews();
@@ -91,5 +83,4 @@ private:
 
     // Referenced by multiple methods
     void cleanupSwapChain();
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &physicalDevice);
 };
