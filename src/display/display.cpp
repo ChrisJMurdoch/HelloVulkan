@@ -53,11 +53,7 @@ void Display::run() {
 
 void Display::initGlfw(int windowWidth, int windowHeight)
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(windowWidth, windowHeight, "HelloVulkan", nullptr, nullptr);
-    glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    window = new Window(windowWidth, windowHeight, framebufferResizeCallback);
 }
 void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -69,7 +65,7 @@ void Display::initVulkan()
 {
     instance = new Instance(DebugMessenger::debugMessengerCreateInfo, validationLayers);
     debugMessenger = new DebugMessenger(instance);
-    failThrow( glfwCreateWindowSurface(instance->getHandle(), window, nullptr, &surface), "Failed to create window surface." );
+    failThrow( glfwCreateWindowSurface(instance->getHandle(), window->getHandle(), nullptr, &surface), "Failed to create window surface." );
     physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface, deviceExtensions);
     graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface);
     device = new Device(physicalDevice, graphicsQueueFamilyIndex, validationLayers, deviceExtensions);
@@ -89,7 +85,7 @@ void Display::initVulkan()
 
 void Display::mainLoop()
 {
-    while (!glfwWindowShouldClose(window))
+    while (!window->shouldClose())
     {
         glfwPollEvents();
         drawFrame();
@@ -120,9 +116,7 @@ void Display::cleanup()
     vkDestroySurfaceKHR(instance->getHandle(), surface, nullptr);
     delete instance;
 
-    glfwDestroyWindow(window);
-
-    glfwTerminate();
+    delete window;
 }
 
 void Display::cleanupSwapChain()
@@ -143,10 +137,10 @@ void Display::recreateSwapChain()
 {
     // Get dimensions and block until window is visible
     int width=0, height=0;
-    glfwGetFramebufferSize(window, &width, &height);
+    window->getFrameBufferSize(width, height);
     while (width == 0 || height == 0)
     {
-        glfwGetFramebufferSize(window, &width, &height);
+        window->getFrameBufferSize(width, height);
         glfwWaitEvents();
     }
 
@@ -175,7 +169,7 @@ void Display::createSwapChain()
     // Choose optimal configurations
     VkSurfaceFormatKHR surfaceFormat = choose::swapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = choose::swapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = choose::swapExtent(swapChainSupport.capabilities, window);
+    VkExtent2D extent = choose::swapExtent(swapChainSupport.capabilities, window->getHandle());
 
     // Calculate optimal image count
     uint32_t minImg=swapChainSupport.capabilities.minImageCount, maxImg=swapChainSupport.capabilities.maxImageCount;

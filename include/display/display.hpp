@@ -11,6 +11,7 @@
 #include "display/debugMessenger.hpp"
 #include "display/physicalDevice.hpp"
 #include "display/device.hpp"
+#include "display/window.hpp"
 
 #include <optional>
 #include <vector>
@@ -22,7 +23,7 @@ public:
     void run();
 
 private:
-    GLFWwindow *window;
+    Window *window;
 
     Instance *instance;
     DebugMessenger *debugMessenger;
