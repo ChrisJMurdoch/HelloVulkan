@@ -12,6 +12,7 @@
 #include "display/physicalDevice.hpp"
 #include "display/device.hpp"
 #include "display/window.hpp"
+#include "display/surface.hpp"
 
 #include <optional>
 #include <vector>
@@ -32,8 +33,7 @@ private:
     RenderPass *renderPass;
     Pipeline *pipeline;
     CommandPool *commandPool;
-
-    VkSurfaceKHR surface;
+    Surface *surface;
 
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages;

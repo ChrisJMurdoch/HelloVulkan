@@ -45,6 +45,7 @@ target_sources(${APP_NAME}
         src/display/physicalDevice.cpp
         src/display/device.cpp
         src/display/window.cpp
+        src/display/surface.cpp
 )
 
 # Add includes

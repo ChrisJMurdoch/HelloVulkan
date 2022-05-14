@@ -61,9 +61,9 @@ void Display::initVulkan()
 {
     instance = new Instance(DebugMessenger::debugMessengerCreateInfo, validationLayers);
     debugMessenger = new DebugMessenger(instance);
-    failThrow( glfwCreateWindowSurface(instance->getHandle(), window->getHandle(), nullptr, &surface), "Failed to create window surface." );
-    physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface, deviceExtensions);
-    graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface);
+    surface = new Surface(instance, window);
+    physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface->getHandle(), deviceExtensions);
+    graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface->getHandle());
     device = new Device(physicalDevice, graphicsQueueFamilyIndex, validationLayers, deviceExtensions);
     createSwapChain();
     createImageViews();
@@ -109,7 +109,7 @@ void Display::cleanup()
 
     delete physicalDevice;
 
-    vkDestroySurfaceKHR(instance->getHandle(), surface, nullptr);
+    delete surface;
     
     delete instance;
 
@@ -161,7 +161,7 @@ void Display::recreateSwapChain()
 void Display::createSwapChain()
 {
     // Get swapchain support details of current physical device
-    SwapChainSupportDetails swapChainSupport = PhysicalDevice::querySwapChainSupport(physicalDevice->getHandle(), surface); // TODO - improve
+    SwapChainSupportDetails swapChainSupport = PhysicalDevice::querySwapChainSupport(physicalDevice->getHandle(), surface->getHandle());
 
     // Choose optimal configurations
     VkSurfaceFormatKHR surfaceFormat = choose::swapSurfaceFormat(swapChainSupport.formats);
@@ -178,7 +178,7 @@ void Display::createSwapChain()
     uint32_t queueFamilyIndices[] = { this->graphicsQueueFamilyIndex };
     VkSwapchainCreateInfoKHR createInfo{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = surface,
+        .surface = surface->getHandle(),
         .minImageCount = imageCount,
         .imageFormat = surfaceFormat.format,
         .imageColorSpace = surfaceFormat.colorSpace,
