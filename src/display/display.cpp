@@ -53,7 +53,7 @@ void Display::run() {
 
 void Display::initGlfw(int windowWidth, int windowHeight)
 {
-    window = new Window(windowWidth, windowHeight, framebufferResizeCallback);
+    window = new Window(windowWidth, windowHeight, framebufferResizeCallback, this);
 }
 void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {

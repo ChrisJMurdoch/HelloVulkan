@@ -1,12 +1,12 @@
 
 #include "display/window.hpp"
 
-Window::Window(int width, int height, GLFWframebuffersizefun callback)
+Window::Window(int width, int height, GLFWframebuffersizefun callback, void *userPointer)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     handle = glfwCreateWindow(width, height, "HelloVulkan", nullptr, nullptr);
-    glfwSetWindowUserPointer(handle, this);
+    glfwSetWindowUserPointer(handle, userPointer);
     glfwSetFramebufferSizeCallback(handle, callback);
 }
 
