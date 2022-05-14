@@ -24,15 +24,16 @@ public:
 
 private:
     Window *window;
-
     Instance *instance;
     DebugMessenger *debugMessenger;
-    VkSurfaceKHR surface;
-
     PhysicalDevice *physicalDevice; // TODO - possibly move or change to heap allocation
     Device *device;
-
     uint32_t graphicsQueueFamilyIndex;
+    RenderPass *renderPass;
+    Pipeline *pipeline;
+    CommandPool *commandPool;
+
+    VkSurfaceKHR surface;
 
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages;
@@ -40,11 +41,6 @@ private:
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
-
-    RenderPass *renderPass;
-    Pipeline *pipeline;
-
-    CommandPool *commandPool;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -54,10 +50,8 @@ private:
     bool framebufferResized = false;
 
 private:
-
     // GLFW initialisation
-    void initGlfw(int windowWidth, int windowHeight);
-        static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
     // Vulkan initialisation
     void initVulkan();

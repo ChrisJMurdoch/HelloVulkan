@@ -42,23 +42,19 @@ inline void failThrow (VkResult value, char const *message = "Error: vulkan call
 
 Display::Display(int windowWidth, int windowHeight)
 {
-    initGlfw(windowWidth, windowHeight);
+    window = new Window(windowWidth, windowHeight, framebufferResizeCallback, this);
     initVulkan();
+}
+
+void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+    Display *display = reinterpret_cast<Display *>(glfwGetWindowUserPointer(window));
+    display->framebufferResized = true;
 }
 
 void Display::run() {
     mainLoop();
     cleanup();
-}
-
-void Display::initGlfw(int windowWidth, int windowHeight)
-{
-    window = new Window(windowWidth, windowHeight, framebufferResizeCallback, this);
-}
-void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
-{
-    Display *display = reinterpret_cast<Display *>(glfwGetWindowUserPointer(window));
-    display->framebufferResized = true;
 }
 
 void Display::initVulkan()
@@ -114,6 +110,7 @@ void Display::cleanup()
     delete physicalDevice;
 
     vkDestroySurfaceKHR(instance->getHandle(), surface, nullptr);
+    
     delete instance;
 
     delete window;
