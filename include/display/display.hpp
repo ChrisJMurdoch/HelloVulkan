@@ -10,6 +10,7 @@
 #include "display/instance.hpp"
 #include "display/debugMessenger.hpp"
 #include "display/physicalDevice.hpp"
+#include "display/device.hpp"
 
 #include <optional>
 #include <vector>
@@ -27,11 +28,10 @@ private:
     DebugMessenger *debugMessenger;
     VkSurfaceKHR surface;
 
-    PhysicalDevice *physicalDevice; // TODO - possibly mnove or change to heap allocation
-    VkDevice device;
+    PhysicalDevice *physicalDevice; // TODO - possibly move or change to heap allocation
+    Device *device;
 
     uint32_t graphicsQueueFamilyIndex;
-    VkQueue graphicsQueue;
 
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages;
@@ -60,11 +60,8 @@ private:
 
     // Vulkan initialisation
     void initVulkan();
-        void pickPhysicalDevice();
-        void createLogicalDevice();
         void createSwapChain();
         void createImageViews();
-        void createGraphicsPipeline();
         void createFramebuffers();
         void createSyncObjects();
 

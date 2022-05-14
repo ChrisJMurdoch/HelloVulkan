@@ -14,7 +14,7 @@ private:
     VkPipelineLayout pipelineLayout;
 
 public:
-    Pipeline(VkDevice const &device, ShaderModule const *vertShaderModule, ShaderModule const *fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent);
+    Pipeline(VkDevice const &device, ShaderModule const &vertShaderModule, ShaderModule const &fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent);
     ~Pipeline();
     VkPipeline const &getHandle() const;
 };

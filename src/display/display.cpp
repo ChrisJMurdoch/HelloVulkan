@@ -21,11 +21,18 @@
 #include <set>
 #include <bitset>
 
+/** 
+ *  TODO
+ * 
+ *  Change Device::getHandle() args to Device
+ *  Ensure all new-delete and vkCreate-vkDestroy are complete
+ */
+
 // PARAMETERS
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-std::vector<const char*> const validationLayers{ "VK_LAYER_KHRONOS_validation" };
-std::vector<const char*> const deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+std::vector<const char *> const validationLayers{ "VK_LAYER_KHRONOS_validation" };
+std::vector<const char *> const deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 // Inline error checking
 inline void nullThrow (void *value,    char const *message = "Error: null value")         { if (value == nullptr)    throw std::exception(message); }
@@ -63,15 +70,20 @@ void Display::initVulkan()
     instance = new Instance(DebugMessenger::debugMessengerCreateInfo, validationLayers);
     debugMessenger = new DebugMessenger(instance);
     failThrow( glfwCreateWindowSurface(instance->getHandle(), window, nullptr, &surface), "Failed to create window surface." );
-    physicalDevice = new PhysicalDevice(device, instance, surface, deviceExtensions);
+    physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface, deviceExtensions);
     graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface);
-    createLogicalDevice();
+    device = new Device(physicalDevice, graphicsQueueFamilyIndex, validationLayers, deviceExtensions);
     createSwapChain();
     createImageViews();
-    renderPass = new RenderPass(device, swapChainImageFormat);
-    createGraphicsPipeline();
+    renderPass = new RenderPass(device->getHandle(), swapChainImageFormat);
+    pipeline = new Pipeline(
+        device->getHandle(),
+        ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
+        ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.frag.spv", std::ios::binary)),
+        renderPass, swapChainExtent
+    );
     createFramebuffers();
-    commandPool = new CommandPool(device, graphicsQueueFamilyIndex, MAX_FRAMES_IN_FLIGHT);
+    commandPool = new CommandPool(device->getHandle(), graphicsQueueFamilyIndex, MAX_FRAMES_IN_FLIGHT);
     createSyncObjects();
 }
 
@@ -86,20 +98,20 @@ void Display::mainLoop()
 
 void Display::cleanup()
 {
-    vkDeviceWaitIdle(device);
+    vkDeviceWaitIdle(device->getHandle());
 
     cleanupSwapChain();
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(device, inFlightFences[i], nullptr);
+        vkDestroySemaphore(device->getHandle(), renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(device->getHandle(), imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(device->getHandle(), inFlightFences[i], nullptr);
     }
 
     delete commandPool;
 
-    vkDestroyDevice(device, nullptr);
+    delete device;
 
     delete debugMessenger;
 
@@ -116,15 +128,15 @@ void Display::cleanup()
 void Display::cleanupSwapChain()
 {
     for (VkFramebuffer const &framebuffer : swapChainFramebuffers)
-        vkDestroyFramebuffer(device, framebuffer, nullptr);
+        vkDestroyFramebuffer(device->getHandle(), framebuffer, nullptr);
 
     delete pipeline;
     delete renderPass;
 
     for (auto imageView : swapChainImageViews)
-        vkDestroyImageView(device, imageView, nullptr);
+        vkDestroyImageView(device->getHandle(), imageView, nullptr);
 
-    vkDestroySwapchainKHR(device, swapChain, nullptr);
+    vkDestroySwapchainKHR(device->getHandle(), swapChain, nullptr);
 }
 
 void Display::recreateSwapChain()
@@ -139,48 +151,20 @@ void Display::recreateSwapChain()
     }
 
     // Cleanup old chain
-    vkDeviceWaitIdle(device);
+    vkDeviceWaitIdle(device->getHandle());
     cleanupSwapChain();
 
     // Create and activate new chain
     createSwapChain();
     createImageViews();
-    renderPass = new RenderPass(device, swapChainImageFormat);
-    createGraphicsPipeline();
+    renderPass = new RenderPass(device->getHandle(), swapChainImageFormat);
+    pipeline = new Pipeline(
+        device->getHandle(),
+        ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
+        ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.frag.spv", std::ios::binary)),
+        renderPass, swapChainExtent
+    );
     createFramebuffers();
-}
-
-void Display::createLogicalDevice()
-{
-    // Create array of queues (just combined main queue for now)
-    float const queuePriority = 1.0f;
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{
-        VkDeviceQueueCreateInfo
-        {
-            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .queueFamilyIndex = this->graphicsQueueFamilyIndex,
-            .queueCount = 1,
-            .pQueuePriorities = &queuePriority
-        }
-    };
-
-    // Create logical device
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    VkDeviceCreateInfo createInfo
-    {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
-        .pQueueCreateInfos = queueCreateInfos.data(),
-        .enabledLayerCount = static_cast<uint32_t>(validationLayers.size()),
-        .ppEnabledLayerNames = validationLayers.data(),
-        .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
-        .ppEnabledExtensionNames = deviceExtensions.data(),
-        .pEnabledFeatures = &deviceFeatures
-    };
-    failThrow( vkCreateDevice(physicalDevice->getHandle(), &createInfo, nullptr, &device), "vkCreateDevice failed." );
-
-    // Get generated queues
-    vkGetDeviceQueue(device, this->graphicsQueueFamilyIndex, 0, &graphicsQueue);
 }
 
 void Display::createSwapChain()
@@ -216,12 +200,12 @@ void Display::createSwapChain()
         .presentMode = presentMode,
         .clipped = VK_TRUE
     };
-    failThrow( vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain), "Failed to create swapchain." );
+    failThrow( vkCreateSwapchainKHR(device->getHandle(), &createInfo, nullptr, &swapChain), "Failed to create swapchain." );
 
     // Get generated images
-    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device->getHandle(), swapChain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(device->getHandle(), swapChain, &imageCount, swapChainImages.data());
 
     // Save format data
     swapChainImageFormat = surfaceFormat.format;
@@ -253,25 +237,8 @@ void Display::createImageViews()
                 .layerCount = 1
             }
         };
-        failThrow( vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]), "Failed to create image views." );
+        failThrow( vkCreateImageView(device->getHandle(), &createInfo, nullptr, &swapChainImageViews[i]), "Failed to create image views." );
     }
-}
-
-void Display::createGraphicsPipeline()
-{
-    // Read shader files
-    std::vector<char> vertShaderCode = io::readFile("shaders/bin/shader.vert.spv", std::ios::binary);
-    std::vector<char> fragShaderCode = io::readFile("shaders/bin/shader.frag.spv", std::ios::binary);
-
-    // Create shaders
-    ShaderModule *vertShaderModule = new ShaderModule(device, vertShaderCode);
-    ShaderModule *fragShaderModule = new ShaderModule(device, fragShaderCode);
-
-    pipeline = new Pipeline(device, vertShaderModule, fragShaderModule, renderPass, swapChainExtent);
-
-    // Clean up shaders
-    delete fragShaderModule;
-    delete vertShaderModule;
 }
 
 void Display::createFramebuffers()
@@ -293,7 +260,7 @@ void Display::createFramebuffers()
             .height = swapChainExtent.height,
             .layers = 1
         };
-        failThrow( vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]), "Failed to create framebuffer." );
+        failThrow( vkCreateFramebuffer(device->getHandle(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]), "Failed to create framebuffer." );
     }
 }
 
@@ -315,20 +282,20 @@ void Display::createSyncObjects()
 
     // Create mutexes for each frame
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        failThrow( vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]), "Failed to create semaphore for a frame." );
-        failThrow( vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]), "Failed to create semaphore for a frame." );
-        failThrow( vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]),                   "Failed to create fence for a frame."     );
+        failThrow( vkCreateSemaphore(device->getHandle(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]), "Failed to create semaphore for a frame." );
+        failThrow( vkCreateSemaphore(device->getHandle(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]), "Failed to create semaphore for a frame." );
+        failThrow( vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &inFlightFences[i]),                   "Failed to create fence for a frame."     );
     }
 }
 
 void Display::drawFrame()
 {
     // Wait for current frame to become available
-    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkWaitForFences(device->getHandle(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire image for current frame
     uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(device->getHandle(), swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
     switch (result)
     {
     case VK_ERROR_OUT_OF_DATE_KHR:
@@ -343,7 +310,7 @@ void Display::drawFrame()
     }
     
     // Reset frame resources
-    vkResetFences(device, 1, &inFlightFences[currentFrame]);
+    vkResetFences(device->getHandle(), 1, &inFlightFences[currentFrame]);
     vkResetCommandBuffer(commandPool->getBuffers()[currentFrame], 0);
 
     recordCommandBuffer(commandPool->getBuffers()[currentFrame], imageIndex);
@@ -362,7 +329,7 @@ void Display::drawFrame()
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = signalSemaphores
     };
-    failThrow( vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]), "Failed to submit draw command buffer." );
+    failThrow( vkQueueSubmit(device->getQueue(), 1, &submitInfo, inFlightFences[currentFrame]), "Failed to submit draw command buffer." );
 
     // Present queue
     VkSwapchainKHR swapChains[] = {swapChain};
@@ -374,7 +341,7 @@ void Display::drawFrame()
         .pSwapchains = swapChains,
         .pImageIndices = &imageIndex
     };
-    result = vkQueuePresentKHR(graphicsQueue, &presentInfo);
+    result = vkQueuePresentKHR(device->getQueue(), &presentInfo);
 
     // Potentially recreate swapchain
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)

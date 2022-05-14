@@ -3,18 +3,18 @@
 
 #include "utility/check.hpp"
 
-Pipeline::Pipeline(VkDevice const &device, ShaderModule const *vertShaderModule, ShaderModule const *fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent) : device(device)
+Pipeline::Pipeline(VkDevice const &device, ShaderModule const &vertShaderModule, ShaderModule const &fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent) : device(device)
 {
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_VERTEX_BIT,
-        .module = vertShaderModule->getHandle(),
+        .module = vertShaderModule.getHandle(),
         .pName = "main"
     };
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .module = fragShaderModule->getHandle(),
+        .module = fragShaderModule.getHandle(),
         .pName = "main"
     };
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
