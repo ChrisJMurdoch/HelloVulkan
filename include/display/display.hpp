@@ -4,7 +4,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "display/common.hpp"
 #include "display/renderPass.hpp"
 #include "display/pipeline.hpp"
 #include "display/commandPool.hpp"
@@ -37,9 +36,8 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
 
-    QueueFamilyIndices qIndices;
+    uint32_t graphicsQueueFamilyIndex;
     VkQueue graphicsQueue;
-    VkQueue presentQueue;
 
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages;
@@ -72,7 +70,7 @@ private:
         void pickPhysicalDevice();
             bool isDeviceSuitable(VkPhysicalDevice physicalDevice);
                 bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-        QueueFamilyIndices getQueueIndices(VkPhysicalDevice  const &physicalDevice = nullptr);
+        uint32_t getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice);
         void createLogicalDevice();
         void createSwapChain();
         void createImageViews();

@@ -3,8 +3,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "display/common.hpp"
-
 #include <vector>
 
 class CommandPool
@@ -15,7 +13,7 @@ private:
     std::vector<VkCommandBuffer> commandBuffers;
 
 public:
-    CommandPool(VkDevice const &device, QueueFamilyIndices const &queueFamilyIndices, int maxFramesInFlight);
+    CommandPool(VkDevice const &device, uint32_t const graphicsQueueFamilyIndex, int maxFramesInFlight);
     ~CommandPool();
     VkCommandPool const &getHandle() const;
     std::vector<VkCommandBuffer> const &getBuffers() const;

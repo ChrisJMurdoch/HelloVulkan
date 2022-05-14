@@ -3,13 +3,13 @@
 
 #include "utility/check.hpp"
 
-CommandPool::CommandPool(VkDevice const &device, QueueFamilyIndices const &queueFamilyIndices, int maxFramesInFlight) : device(device)
+CommandPool::CommandPool(VkDevice const &device, uint32_t const graphicsQueueFamilyIndex, int maxFramesInFlight) : device(device)
 {
     // Create CommandPool
     VkCommandPoolCreateInfo poolInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()
+        .queueFamilyIndex = graphicsQueueFamilyIndex
     };
     check::fail( vkCreateCommandPool(device, &poolInfo, nullptr, &handle), "vkCreateCommandPool failed." );
 

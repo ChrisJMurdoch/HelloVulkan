@@ -64,7 +64,7 @@ void Display::initVulkan()
     debugMessenger = new DebugMessenger(instance);
     createSurface();
     pickPhysicalDevice();
-    this->qIndices = getQueueIndices();
+    graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(physicalDevice);
     createLogicalDevice();
     createSwapChain();
     createImageViews();
@@ -175,60 +175,42 @@ void Display::pickPhysicalDevice()
     nullThrow(physicalDevice, "Failed to find a suitable GPU.");
 }
 
-QueueFamilyIndices Display::getQueueIndices(VkPhysicalDevice  const &physicalDevice)
+uint32_t Display::getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice)
 {
-    // If no physical device is provided, use currently active
-    VkPhysicalDevice const &physDevice = physicalDevice==nullptr ? this->physicalDevice : physicalDevice;
-    nullThrow(physDevice, "No physical device active.");
-
-    // Get queue families
+    // Retrieve queue families
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
-    // Get queue family indices
-    QueueFamilyIndices indices;
-    for (int i=0; i<queueFamilies.size(); i++)
+    // Check each queue family for compatibility
+    for (uint32_t i=0; i<queueFamilies.size(); i++)
     {
         VkQueueFamilyProperties const &queueFamily = queueFamilies[i];
 
-        // Get graphics family
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            indices.graphicsFamily = i;
-
-        // Get present family
+        // Check for graphics and present capabilities
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physDevice, i, surface, &presentSupport);
-        if (presentSupport)
-            indices.presentFamily = i;
-
-        // Stop looking if complete
-        if (indices.isComplete())
-            break;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+        if ( (queueFamily.queueFlags&VK_QUEUE_GRAPHICS_BIT) && presentSupport)
+            return i;
     }
 
-    return indices;
+    throw std::exception("Couldn't find a queue family with present and graphics capabilities.");
 }
 
 void Display::createLogicalDevice()
 {
-    // Get unique queue families
-    std::set<uint32_t> uniqueQueueFamilies{this->qIndices.graphicsFamily.value(), this->qIndices.presentFamily.value()};
-
-    // Iterate each queue family
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    for (uint32_t queueFamily : uniqueQueueFamilies)
-    {
-        float const queuePriority = 1.0f;
-        queueCreateInfos.push_back(VkDeviceQueueCreateInfo
+    // Create array of queues (just combined main queue for now)
+    float const queuePriority = 1.0f;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{
+        VkDeviceQueueCreateInfo
         {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .queueFamilyIndex = queueFamily,
+            .queueFamilyIndex = this->graphicsQueueFamilyIndex,
             .queueCount = 1,
             .pQueuePriorities = &queuePriority
-        });
-    }
+        }
+    };
 
     // Create logical device
     VkPhysicalDeviceFeatures deviceFeatures{};
@@ -243,11 +225,10 @@ void Display::createLogicalDevice()
         .ppEnabledExtensionNames = deviceExtensions.data(),
         .pEnabledFeatures = &deviceFeatures
     };
-    failThrow( vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device" );
+    failThrow( vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "vkCreateDevice failed." );
 
     // Get generated queues
-    vkGetDeviceQueue(device, this->qIndices.graphicsFamily.value(), 0, &graphicsQueue);
-    vkGetDeviceQueue(device, this->qIndices.presentFamily.value(), 0, &presentQueue);
+    vkGetDeviceQueue(device, this->graphicsQueueFamilyIndex, 0, &graphicsQueue);
 }
 
 void Display::createSwapChain()
@@ -267,8 +248,7 @@ void Display::createSwapChain()
         imageCount = maxImg;
 
     // Create swapchain
-    bool const multiQueues = this->qIndices.graphicsFamily != this->qIndices.presentFamily;
-    uint32_t queueFamilyIndices[] = { this->qIndices.graphicsFamily.value(), this->qIndices.presentFamily.value() };
+    uint32_t queueFamilyIndices[] = { this->graphicsQueueFamilyIndex };
     VkSwapchainCreateInfoKHR createInfo{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = surface,
@@ -278,9 +258,7 @@ void Display::createSwapChain()
         .imageExtent = extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        .imageSharingMode =      multiQueues ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = multiQueues ? 2u : 0u,
-        .pQueueFamilyIndices =   multiQueues ? queueFamilyIndices : nullptr,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .preTransform = swapChainSupport.capabilities.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = presentMode,
@@ -374,7 +352,7 @@ void Display::createFramebuffers()
 
 void Display::createCommandPool()
 {
-    commandPool = new CommandPool(device, qIndices, MAX_FRAMES_IN_FLIGHT);
+    commandPool = new CommandPool(device, graphicsQueueFamilyIndex, MAX_FRAMES_IN_FLIGHT);
 }
 
 void Display::createSyncObjects()
@@ -454,7 +432,7 @@ void Display::drawFrame()
         .pSwapchains = swapChains,
         .pImageIndices = &imageIndex
     };
-    result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    result = vkQueuePresentKHR(graphicsQueue, &presentInfo);
 
     // Potentially recreate swapchain
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
@@ -529,9 +507,15 @@ SwapChainSupportDetails Display::querySwapChainSupport(VkPhysicalDevice const &p
 
 bool Display::isDeviceSuitable(VkPhysicalDevice physicalDevice)
 {
-    // Test queue family indices for specific device
-    if (!getQueueIndices(physicalDevice).isComplete())
+    // Get queue support
+    try
+    {
+        getGraphicsQueueFamilyIndex(physicalDevice);
+    }
+    catch(std::exception const &e)
+    {
         return false;
+    }
 
     // Check extension support
     if ( !checkDeviceExtensionSupport(physicalDevice) )
