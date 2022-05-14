@@ -24,6 +24,7 @@ public:
 
     bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR const &surface, std::vector<const char*> const &deviceExtensions);
     bool checkDeviceExtensionSupport(VkPhysicalDevice device, std::vector<const char*> const &deviceExtensions);
-    uint32_t getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface);
     static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface);
+
+    static uint32_t getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface);
 };

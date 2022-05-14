@@ -78,6 +78,28 @@ bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device, std::v
     return requiredExtensions.empty();
 }
 
+SwapChainSupportDetails PhysicalDevice::querySwapChainSupport(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface)
+{
+    SwapChainSupportDetails details;
+
+    // Get capabilities
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+
+    // Get surface formats
+    uint32_t nFormats;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &nFormats, nullptr);
+    details.formats.resize(nFormats);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &nFormats, details.formats.data());
+
+    // Get present modes
+    uint32_t nPresentModes;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &nPresentModes, nullptr);
+    details.presentModes.resize(nPresentModes);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &nPresentModes, details.presentModes.data());
+
+    return details;
+}
+
 uint32_t PhysicalDevice::getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface)
 {
     // Retrieve queue families
@@ -99,26 +121,4 @@ uint32_t PhysicalDevice::getGraphicsQueueFamilyIndex(VkPhysicalDevice const &phy
     }
 
     throw std::exception("Couldn't find a queue family with present and graphics capabilities.");
-}
-
-SwapChainSupportDetails PhysicalDevice::querySwapChainSupport(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface)
-{
-    SwapChainSupportDetails details;
-
-    // Get capabilities
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
-
-    // Get surface formats
-    uint32_t nFormats;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &nFormats, nullptr);
-    details.formats.resize(nFormats);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &nFormats, details.formats.data());
-
-    // Get present modes
-    uint32_t nPresentModes;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &nPresentModes, nullptr);
-    details.presentModes.resize(nPresentModes);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &nPresentModes, details.presentModes.data());
-
-    return details;
 }

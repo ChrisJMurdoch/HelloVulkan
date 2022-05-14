@@ -60,16 +60,12 @@ private:
 
     // Vulkan initialisation
     void initVulkan();
-        void createSurface();
         void pickPhysicalDevice();
-        uint32_t getGraphicsQueueFamilyIndex(PhysicalDevice const *physicalDevice);
         void createLogicalDevice();
         void createSwapChain();
         void createImageViews();
-        void createRenderPass();
         void createGraphicsPipeline();
         void createFramebuffers();
-        void createCommandPool();
         void createSyncObjects();
 
     // Main render loop

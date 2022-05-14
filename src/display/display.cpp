@@ -62,16 +62,16 @@ void Display::initVulkan()
 {
     instance = new Instance(DebugMessenger::debugMessengerCreateInfo, validationLayers);
     debugMessenger = new DebugMessenger(instance);
-    createSurface();
-    pickPhysicalDevice();
-    graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(physicalDevice);
+    failThrow( glfwCreateWindowSurface(instance->getHandle(), window, nullptr, &surface), "Failed to create window surface." );
+    physicalDevice = new PhysicalDevice(device, instance, surface, deviceExtensions);
+    graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface);
     createLogicalDevice();
     createSwapChain();
     createImageViews();
-    createRenderPass();
+    renderPass = new RenderPass(device, swapChainImageFormat);
     createGraphicsPipeline();
     createFramebuffers();
-    createCommandPool();
+    commandPool = new CommandPool(device, graphicsQueueFamilyIndex, MAX_FRAMES_IN_FLIGHT);
     createSyncObjects();
 }
 
@@ -145,42 +145,9 @@ void Display::recreateSwapChain()
     // Create and activate new chain
     createSwapChain();
     createImageViews();
-    createRenderPass();
+    renderPass = new RenderPass(device, swapChainImageFormat);
     createGraphicsPipeline();
     createFramebuffers();
-}
-
-void Display::createSurface()
-{
-    failThrow( glfwCreateWindowSurface(instance->getHandle(), window, nullptr, &surface), "Failed to create window surface." );
-}
-
-void Display::pickPhysicalDevice()
-{
-    physicalDevice = new PhysicalDevice(device, instance, surface, deviceExtensions);
-}
-
-uint32_t Display::getGraphicsQueueFamilyIndex(PhysicalDevice const *physicalDevice)
-{
-    // Retrieve queue families
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice->getHandle(), &queueFamilyCount, nullptr);
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice->getHandle(), &queueFamilyCount, queueFamilies.data());
-
-    // Check each queue family for compatibility
-    for (uint32_t i=0; i<queueFamilies.size(); i++)
-    {
-        VkQueueFamilyProperties const &queueFamily = queueFamilies[i];
-
-        // Check for graphics and present capabilities
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice->getHandle(), i, surface, &presentSupport);
-        if ( (queueFamily.queueFlags&VK_QUEUE_GRAPHICS_BIT) && presentSupport)
-            return i;
-    }
-
-    throw std::exception("Couldn't find a queue family with present and graphics capabilities.");
 }
 
 void Display::createLogicalDevice()
@@ -290,11 +257,6 @@ void Display::createImageViews()
     }
 }
 
-void Display::createRenderPass()
-{
-    renderPass = new RenderPass(device, swapChainImageFormat);
-}
-
 void Display::createGraphicsPipeline()
 {
     // Read shader files
@@ -333,11 +295,6 @@ void Display::createFramebuffers()
         };
         failThrow( vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]), "Failed to create framebuffer." );
     }
-}
-
-void Display::createCommandPool()
-{
-    commandPool = new CommandPool(device, graphicsQueueFamilyIndex, MAX_FRAMES_IN_FLIGHT);
 }
 
 void Display::createSyncObjects()
