@@ -53,7 +53,6 @@ private:
     // Main render loop
     void mainLoop();
         void drawFrame();
-            void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
     // Free device memory
     void cleanup();

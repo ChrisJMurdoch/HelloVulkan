@@ -27,6 +27,7 @@
  *  Change Device::getHandle() args to Device
  *  Ensure all new-delete and vkCreate-vkDestroy are complete
  *  Move swapchain recreation from function call to full new-delete calls
+ *  Fix class function visibility
  */
 
 // PARAMETERS
@@ -137,27 +138,50 @@ void Display::drawFrame()
     // Wait for current frame to become available
     vkWaitForFences(device->getHandle(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
-    // Acquire image for current frame
+    // Acquire valid image
     uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(device->getHandle(), swapChain->getHandle(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-    switch (result)
+    VkResult result;
+    while (true)
     {
-    case VK_ERROR_OUT_OF_DATE_KHR:
-        swapChain->recreateSwapChain(physicalDevice, window, surface);
-        return;
-    case VK_SUCCESS:
-    case VK_SUBOPTIMAL_KHR:
-        // OK
-        break;
-    default:
-        throw std::exception("Failed to acquire swap chain image.");
-    }
-    
-    // Reset frame resources
-    vkResetFences(device->getHandle(), 1, &inFlightFences[currentFrame]);
-    vkResetCommandBuffer(commandPool->getBuffers()[currentFrame], 0);
+        // Acquire image
+        result = vkAcquireNextImageKHR(device->getHandle(), swapChain->getHandle(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    recordCommandBuffer(commandPool->getBuffers()[currentFrame], imageIndex);
+        // If necessary, regenerate and repeat
+        if ( result!=VK_SUCCESS || framebufferResized )
+        {
+            framebufferResized = false;
+            swapChain->recreateSwapChain(physicalDevice, window, surface);
+            std::cout << "Swapchain regenerated." << std::endl;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // Record commands
+    commandPool->record(swapChain, currentFrame, imageIndex, [&](VkCommandBuffer const &commandBuffer)
+    {
+        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        VkRenderPassBeginInfo renderPassInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .renderPass = swapChain->getRenderPass()->getHandle(),
+            .framebuffer = swapChain->getFramebuffers()[imageIndex],
+            .renderArea{
+                .offset = {0, 0},
+                .extent = swapChain->getExtent()
+            },
+            .clearValueCount = 1,
+            .pClearValues = &clearColor
+        };
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->getPipeline()->getHandle());
+
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(commandBuffer);
+    });
 
     // Submit queue
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
@@ -173,6 +197,7 @@ void Display::drawFrame()
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = signalSemaphores
     };
+    vkResetFences(device->getHandle(), 1, &inFlightFences[currentFrame]);
     failThrow( vkQueueSubmit(device->getQueue(), 1, &submitInfo, inFlightFences[currentFrame]), "Failed to submit draw command buffer." );
 
     // Present queue
@@ -187,52 +212,6 @@ void Display::drawFrame()
     };
     result = vkQueuePresentKHR(device->getQueue(), &presentInfo);
 
-    // Potentially recreate swapchain
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
-    {
-        framebufferResized = false;
-        swapChain->recreateSwapChain(physicalDevice, window, surface);
-    }
-    else
-    {
-        failThrow( result, "Failed to present swap chain image." );
-    }
-
     // Change frame index to next
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-// TIER 3
-
-void Display::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-{
-    
-    // Begin command buffer
-    VkCommandBufferBeginInfo beginInfo{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-    };
-    failThrow( vkBeginCommandBuffer(commandBuffer, &beginInfo), "Failed to begin recording command buffer." );
-
-    // Begin render pass
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    VkRenderPassBeginInfo renderPassInfo{
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        .renderPass = swapChain->getRenderPass()->getHandle(),
-        .framebuffer = swapChain->getFramebuffers()[imageIndex],
-        .renderArea{
-            .offset = {0, 0},
-            .extent = swapChain->getExtent()
-        },
-        .clearValueCount = 1,
-        .pClearValues = &clearColor
-    };
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->getPipeline()->getHandle());
-
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
-    vkCmdEndRenderPass(commandBuffer);
-
-    failThrow( vkEndCommandBuffer(commandBuffer), "Failed to record command buffer." );
 }

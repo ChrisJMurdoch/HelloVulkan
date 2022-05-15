@@ -1,9 +1,12 @@
 
 #pragma once
 
+#include "display/swapchain.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
+#include <functional>
 
 class CommandPool
 {
@@ -17,4 +20,5 @@ public:
     ~CommandPool();
     VkCommandPool const &getHandle() const;
     std::vector<VkCommandBuffer> const &getBuffers() const;
+    void record(Swapchain const *swapchain, int commandBufferIndex, int frameBufferIndex, std::function<void(VkCommandBuffer const &commandBuffer)> commands);
 };

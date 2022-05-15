@@ -38,3 +38,24 @@ std::vector<VkCommandBuffer> const &CommandPool::getBuffers() const
 {
     return commandBuffers;
 }
+
+void CommandPool::record(Swapchain const *swapchain, int commandBufferIndex, int frameBufferIndex, std::function<void(VkCommandBuffer const &commandBuffer)> commands)
+{
+    // Get active buffer
+    VkCommandBuffer commandBuffer = commandBuffers[commandBufferIndex];
+
+    // Reset
+    vkResetCommandBuffer(commandBuffer, 0);
+
+    // Begin recording
+    VkCommandBufferBeginInfo beginInfo{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+    };
+    check::fail( vkBeginCommandBuffer(commandBuffer, &beginInfo), "vkBeginCommandBuffer failed." );
+
+    // Run custom command
+    commands(commandBuffer);
+
+    // End recording
+    check::fail( vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer failed." );
+}
