@@ -57,14 +57,14 @@ VkRenderPass const &RenderPass::getHandle() const
     return handle;
 }
 
-void RenderPass::record(Swapchain const *swapchain, int imageIndex, VkCommandBuffer const &commandBuffer, std::function<void()> commands) const
+void RenderPass::record(Swapchain const *swapchain, Image const &image, VkCommandBuffer const &commandBuffer, std::function<void()> commands) const
 {
     // Start render pass
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     VkRenderPassBeginInfo renderPassInfo{
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = swapchain->getRenderPass()->getHandle(),
-        .framebuffer = swapchain->getFramebuffers()[imageIndex],
+        .framebuffer = image.framebuffer,
         .renderArea{
             .offset = {0, 0},
             .extent = swapchain->getExtent()

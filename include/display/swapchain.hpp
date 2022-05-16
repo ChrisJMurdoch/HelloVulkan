@@ -10,6 +10,17 @@
 #include <vulkan/vulkan.h>
 
 class RenderPass;
+class CommandPool;
+
+class Image
+{
+public:
+    VkImage const &image;
+    VkImageView const &imageView;
+    VkFramebuffer const &framebuffer;
+    uint32_t const index;
+    Image(VkImage const &image, VkImageView const &imageView, VkFramebuffer const &framebuffer, uint32_t const index);
+};
 
 class Swapchain
 {
@@ -33,7 +44,7 @@ public:
     void cleanupSwapChain();
     void recreateSwapChain(PhysicalDevice const *physicalDevice, Window *window, Surface const *surface);
     VkSwapchainKHR const &getHandle() const;
-    std::vector<VkFramebuffer> const &getFramebuffers() const;
+    Image const getImage(int index) const;
     VkExtent2D const &getExtent() const;
     RenderPass const *getRenderPass() const;
     Pipeline const *getPipeline() const;
@@ -44,4 +55,6 @@ public:
     static VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR const &capabilities, GLFWwindow *window);
     void createImageViews();
     void createFramebuffers();
+
+    Image const acquireNextImage(CommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window *window, Surface const *surface);
 };

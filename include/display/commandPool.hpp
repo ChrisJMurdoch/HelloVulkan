@@ -18,6 +18,7 @@ public:
     VkFence& inFlightFence;
     CommandBuffer(VkCommandBuffer &commandBuffer, VkSemaphore &imageAvailableSemaphore, VkSemaphore &renderFinishedSemaphore, VkFence& inFlightFence);
     void waitForReady(Device const *device) const;
+    void record(Swapchain const *swapchain, std::function<void(VkCommandBuffer const &commandBuffer)> commands);
 };
 
 class CommandPool
@@ -35,6 +36,5 @@ public:
     CommandPool(Device const *device, uint32_t const graphicsQueueFamilyIndex, int maxFramesInFlight);
     ~CommandPool();
     VkCommandPool const &getHandle() const;
-    CommandBuffer getBuffer(int index);
-    void record(Swapchain const *swapchain, int commandBufferIndex, int frameBufferIndex, std::function<void(VkCommandBuffer const &commandBuffer)> commands);
+    CommandBuffer nextBuffer();
 };

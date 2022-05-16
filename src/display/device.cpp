@@ -80,7 +80,7 @@ void Queue::submit(Device const *device, VkSemaphore const &waitSemaphore, VkSem
     check::fail( vkQueueSubmit(handle, 1, &submitInfo, fence), "Failed to submit draw command buffer." );
 }
 
-void Queue::present(Swapchain const *swapchain, VkSemaphore const &waitSemaphore, uint32_t imageIndex)
+void Queue::present(Swapchain const *swapchain, VkSemaphore const &waitSemaphore, Image const &image)
 {
     VkSwapchainKHR swapchains[] = {swapchain->getHandle()};
     VkSemaphore waitSemaphores[] = {waitSemaphore};
@@ -90,7 +90,7 @@ void Queue::present(Swapchain const *swapchain, VkSemaphore const &waitSemaphore
         .pWaitSemaphores = waitSemaphores,
         .swapchainCount = 1,
         .pSwapchains = swapchains,
-        .pImageIndices = &imageIndex
+        .pImageIndices = &image.index
     };
     vkQueuePresentKHR(handle, &presentInfo);
 }

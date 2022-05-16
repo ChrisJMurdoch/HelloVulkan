@@ -6,6 +6,7 @@
 #include <functional>
 
 class Swapchain;
+class Image;
 
 class RenderPass
 {
@@ -18,5 +19,5 @@ public:
     ~RenderPass();
     VkRenderPass const &getHandle() const;
 
-    void record(Swapchain const *swapchain, int imageIndex, VkCommandBuffer const &commandBuffer, std::function<void()> commands) const;
+    void record(Swapchain const *swapchain, Image const &image, VkCommandBuffer const &commandBuffer, std::function<void()> commands) const;
 };

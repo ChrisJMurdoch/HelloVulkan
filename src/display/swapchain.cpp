@@ -2,10 +2,15 @@
 #include "display/swapchain.hpp"
 
 #include "display/renderPass.hpp"
+#include "display/commandPool.hpp"
 #include "utility/check.hpp"
 #include "utility/io.hpp"
 
 #include <iostream>
+
+Image::Image(VkImage const &image, VkImageView const &imageView, VkFramebuffer const &framebuffer, uint32_t const index)
+    : image{image}, imageView{imageView}, framebuffer{framebuffer}, index{index}
+{ }
 
 Swapchain::Swapchain(Device const *device, PhysicalDevice const *physicalDevice, Window *window, Surface const *surface) : device(device)
 {
@@ -66,9 +71,9 @@ VkSwapchainKHR const &Swapchain::getHandle() const
     return handle;
 }
 
-std::vector<VkFramebuffer> const &Swapchain::getFramebuffers() const
+Image const Swapchain::getImage(int index) const
 {
-    return swapChainFramebuffers;
+    return Image(swapChainImages[index], swapChainImageViews[index], swapChainFramebuffers[index], index);
 }
 
 VkExtent2D const &Swapchain::getExtent() const
@@ -214,4 +219,18 @@ void Swapchain::createFramebuffers()
         };
         check::fail( vkCreateFramebuffer(device->getHandle(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]), "Failed to create framebuffer." );
     }
+}
+
+Image const Swapchain::acquireNextImage(CommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window *window, Surface const *surface)
+{
+    uint32_t imageIndex;
+    while (
+        framebufferResized ||
+        vkAcquireNextImageKHR(device->getHandle(), handle, UINT64_MAX, commandBuffer.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS
+    )
+    {
+        recreateSwapChain(physicalDevice, window, surface);
+        framebufferResized = false;
+    }
+    return getImage(imageIndex);
 }

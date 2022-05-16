@@ -105,38 +105,17 @@ void Display::run()
 
 void Display::drawFrame()
 {
-    // Get current command buffer
-    static int currentFrame = 0;
-    CommandBuffer commandBuffer = commandPool->getBuffer(currentFrame);
-
-    // Wait for current command buffer to become available
+    // Get next command buffer and wait till ready
+    CommandBuffer commandBuffer = commandPool->nextBuffer();
     commandBuffer.waitForReady(device);
-    
-    // Acquire valid image
-    uint32_t imageIndex;
-    VkResult result;
-    while (true)
-    {
-        // Acquire image
-        result = vkAcquireNextImageKHR(device->getHandle(), swapChain->getHandle(), UINT64_MAX, commandBuffer.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-        // If necessary, regenerate and repeat
-        if ( result!=VK_SUCCESS || framebufferResized )
-        {
-            framebufferResized = false;
-            swapChain->recreateSwapChain(physicalDevice, window, surface);
-            std::cout << "Swapchain regenerated." << std::endl;
-        }
-        else
-        {
-            break;
-        }
-    }
+    // Acquire valid image from swapchain
+    Image image = swapChain->acquireNextImage(commandBuffer, framebufferResized, physicalDevice, window, surface);
 
-    // Record commands
-    commandPool->record(swapChain, currentFrame, imageIndex, [&](VkCommandBuffer const &commandBuffer)
+    // Record commands into command buffer
+    commandBuffer.record(swapChain, [&](VkCommandBuffer const &commandBuffer)
     {
-        swapChain->getRenderPass()->record(swapChain, imageIndex, commandBuffer, [&]()
+        swapChain->getRenderPass()->record(swapChain, image, commandBuffer, [&]()
         {
             // Bind graphics pipeline with specific shaders
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->getPipeline()->getHandle());
@@ -146,11 +125,9 @@ void Display::drawFrame()
         });
     });
 
-    device->getQueue().submit(device, commandBuffer.imageAvailableSemaphore, commandBuffer.renderFinishedSemaphore, commandBuffer.inFlightFence, commandPool->getBuffer(currentFrame));
+    // Submit command buffer to graphics/present queue
+    device->getQueue().submit(device, commandBuffer.imageAvailableSemaphore, commandBuffer.renderFinishedSemaphore, commandBuffer.inFlightFence, commandBuffer);
     
-    device->getQueue().present(swapChain, commandBuffer.renderFinishedSemaphore, imageIndex);
-
-    // Next frame index
-    currentFrame++;
-    currentFrame %= MAX_FRAMES_IN_FLIGHT;
+    // Present image
+    device->getQueue().present(swapChain, commandBuffer.renderFinishedSemaphore, image);
 }

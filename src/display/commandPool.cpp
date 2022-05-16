@@ -12,6 +12,22 @@ void CommandBuffer::waitForReady(Device const *device) const
     vkWaitForFences(device->getHandle(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 }
 
+void CommandBuffer::record(Swapchain const *swapchain, std::function<void(VkCommandBuffer const &commandBuffer)> commands)
+{
+    // Reset buffer
+    vkResetCommandBuffer(commandBuffer, 0);
+
+    // Begin recording
+    VkCommandBufferBeginInfo beginInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    check::fail( vkBeginCommandBuffer(commandBuffer, &beginInfo), "vkBeginCommandBuffer failed." );
+
+    // Run commands to record
+    commands(commandBuffer);
+
+    // End recording
+    check::fail( vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer failed." );
+}
+
 CommandPool::CommandPool(Device const *device, uint32_t const graphicsQueueFamilyIndex, int maxFramesInFlight) : device(device)
 {
     // Create CommandPool
@@ -73,26 +89,10 @@ VkCommandPool const &CommandPool::getHandle() const
     return handle;
 }
 
-CommandBuffer CommandPool::getBuffer(int index)
+CommandBuffer CommandPool::nextBuffer()
 {
+    static int index = 0;
     return CommandBuffer(commandBuffers[index], imageAvailableSemaphores[index], renderFinishedSemaphores[index], inFlightFences[index]);
-}
-
-void CommandPool::record(Swapchain const *swapchain, int commandBufferIndex, int frameBufferIndex, std::function<void(VkCommandBuffer const &commandBuffer)> commands)
-{
-    // Get active buffer
-    VkCommandBuffer commandBuffer = commandBuffers[commandBufferIndex];
-
-    // Reset buffer
-    vkResetCommandBuffer(commandBuffer, 0);
-
-    // Begin recording
-    VkCommandBufferBeginInfo beginInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    check::fail( vkBeginCommandBuffer(commandBuffer, &beginInfo), "vkBeginCommandBuffer failed." );
-
-    // Run commands to record
-    commands(commandBuffer);
-
-    // End recording
-    check::fail( vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer failed." );
+    index++;
+    index %= commandBuffers.size();
 }
