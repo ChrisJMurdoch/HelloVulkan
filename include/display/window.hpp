@@ -10,10 +10,10 @@ private:
     GLFWwindow *handle;
 
 public:
-    Window(int width, int height, GLFWframebuffersizefun callback, void *userPointer);
+    Window(int width, int height, char const *title, GLFWframebuffersizefun callback, void *userPointer);
     ~Window();
-    GLFWwindow const *getHandle() const;
-    GLFWwindow *getHandle();
+
+    GLFWwindow *getHandle() const;
     bool shouldClose() const;
-    void getFrameBufferSize(int &width, int &height) const;
+    void getFramebufferSize(int &width, int &height) const;
 };

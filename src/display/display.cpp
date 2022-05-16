@@ -25,13 +25,13 @@ std::vector<const char *> const DEVICE_EXTENSIONS{ VK_KHR_SWAPCHAIN_EXTENSION_NA
 
 // FUNCTIONS
 
-Display::Display(int windowWidth, int windowHeight, BufferingStrategy bufferingStrategy, bool enableValidationLayers) : maxFramesInFlight{bufferingStrategy}
+Display::Display(int windowWidth, int windowHeight, char const *title, BufferingStrategy bufferingStrategy, bool enableValidationLayers) : maxFramesInFlight{bufferingStrategy}
 {
     // Enable validations layers
     activeValidationLayers = enableValidationLayers ? VALIDATION_LAYERS : std::vector<const char *>{};
 
     // GLFW
-    window = new Window(windowWidth, windowHeight, framebufferResizeCallback, this);
+    window = new Window(windowWidth, windowHeight, title, framebufferResizeCallback, this);
 
     // Vulkan
     instance = new Instance(DebugMessenger::debugMessengerCreateInfo, activeValidationLayers);

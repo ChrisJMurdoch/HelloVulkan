@@ -51,10 +51,10 @@ void Swapchain::recreateSwapChain(PhysicalDevice const *physicalDevice, Window *
 {
     // Get dimensions and block until window is visible
     int width=0, height=0;
-    window->getFrameBufferSize(width, height);
+    window->getFramebufferSize(width, height);
     while (width == 0 || height == 0)
     {
-        window->getFrameBufferSize(width, height);
+        window->getFramebufferSize(width, height);
         glfwWaitEvents();
     }
 

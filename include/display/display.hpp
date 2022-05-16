@@ -39,7 +39,7 @@ private:
     bool framebufferResized = false;
 
 public:
-    Display(int windowWidth, int windowHeight, BufferingStrategy bufferingStrategy=DoubleBuffering, bool enableValidationLayers=false);
+    Display(int windowWidth, int windowHeight, char const *title, BufferingStrategy bufferingStrategy=DoubleBuffering, bool enableValidationLayers=false);
     ~Display();
 
     void run();
