@@ -5,10 +5,11 @@
 #include "display/physicalDevice.hpp"
 #include "display/window.hpp"
 #include "display/surface.hpp"
-#include "display/renderPass.hpp"
 #include "display/pipeline.hpp"
 
 #include <vulkan/vulkan.h>
+
+class RenderPass;
 
 class Swapchain
 {

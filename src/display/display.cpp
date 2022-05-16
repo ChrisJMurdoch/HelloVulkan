@@ -162,25 +162,14 @@ void Display::drawFrame()
     // Record commands
     commandPool->record(swapChain, currentFrame, imageIndex, [&](VkCommandBuffer const &commandBuffer)
     {
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        VkRenderPassBeginInfo renderPassInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .renderPass = swapChain->getRenderPass()->getHandle(),
-            .framebuffer = swapChain->getFramebuffers()[imageIndex],
-            .renderArea{
-                .offset = {0, 0},
-                .extent = swapChain->getExtent()
-            },
-            .clearValueCount = 1,
-            .pClearValues = &clearColor
-        };
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        swapChain->getRenderPass()->record(swapChain, imageIndex, commandBuffer, [&]()
+        {
+            // Bind graphics pipeline with specific shaders
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->getPipeline()->getHandle());
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->getPipeline()->getHandle());
-
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
-        vkCmdEndRenderPass(commandBuffer);
+            // Draw triangles
+            vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        });
     });
 
     // Submit queue

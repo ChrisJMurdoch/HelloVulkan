@@ -1,6 +1,7 @@
 
 #include "display/swapchain.hpp"
 
+#include "display/renderPass.hpp"
 #include "utility/check.hpp"
 #include "utility/io.hpp"
 

@@ -1,6 +1,7 @@
 
 #include "display/renderPass.hpp"
 
+#include "display/swapchain.hpp"
 #include "utility/check.hpp"
 
 #include <exception>
@@ -54,4 +55,27 @@ RenderPass::~RenderPass()
 VkRenderPass const &RenderPass::getHandle() const
 {
     return handle;
+}
+
+void RenderPass::record(Swapchain const *swapchain, int imageIndex, VkCommandBuffer const &commandBuffer, std::function<void()> commands) const
+{
+    // Start render pass
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    VkRenderPassBeginInfo renderPassInfo{
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass = swapchain->getRenderPass()->getHandle(),
+        .framebuffer = swapchain->getFramebuffers()[imageIndex],
+        .renderArea{
+            .offset = {0, 0},
+            .extent = swapchain->getExtent()
+        },
+        .clearValueCount = 1,
+        .pClearValues = &clearColor
+    };
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    commands();
+
+    // End render pass
+    vkCmdEndRenderPass(commandBuffer);
 }

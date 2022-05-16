@@ -44,16 +44,14 @@ void CommandPool::record(Swapchain const *swapchain, int commandBufferIndex, int
     // Get active buffer
     VkCommandBuffer commandBuffer = commandBuffers[commandBufferIndex];
 
-    // Reset
+    // Reset buffer
     vkResetCommandBuffer(commandBuffer, 0);
 
     // Begin recording
-    VkCommandBufferBeginInfo beginInfo{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-    };
+    VkCommandBufferBeginInfo beginInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     check::fail( vkBeginCommandBuffer(commandBuffer, &beginInfo), "vkBeginCommandBuffer failed." );
 
-    // Run custom command
+    // Run commands to record
     commands(commandBuffer);
 
     // End recording
