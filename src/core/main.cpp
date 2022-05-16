@@ -7,7 +7,7 @@ int main()
 {
     try
     {
-        Display display{1000, 500};
+        Display display{1000, 600};
         display.run();
     }
     catch (std::exception const &e)
