@@ -7,6 +7,11 @@ CommandBuffer::CommandBuffer(VkCommandBuffer &commandBuffer, VkSemaphore &imageA
     : commandBuffer{commandBuffer}, imageAvailableSemaphore{imageAvailableSemaphore}, renderFinishedSemaphore{renderFinishedSemaphore}, inFlightFence{inFlightFence}
 { }
 
+void CommandBuffer::waitForReady(Device const *device) const
+{
+    vkWaitForFences(device->getHandle(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+}
+
 CommandPool::CommandPool(Device const *device, uint32_t const graphicsQueueFamilyIndex, int maxFramesInFlight) : device(device)
 {
     // Create CommandPool

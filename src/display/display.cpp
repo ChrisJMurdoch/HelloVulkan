@@ -109,9 +109,9 @@ void Display::drawFrame()
     static int currentFrame = 0;
     CommandBuffer commandBuffer = commandPool->getBuffer(currentFrame);
 
-    // Wait for current frame to become available
-    vkWaitForFences(device->getHandle(), 1, &commandBuffer.inFlightFence, VK_TRUE, UINT64_MAX);
-
+    // Wait for current command buffer to become available
+    commandBuffer.waitForReady(device);
+    
     // Acquire valid image
     uint32_t imageIndex;
     VkResult result;
@@ -150,6 +150,7 @@ void Display::drawFrame()
     
     device->getQueue().present(swapChain, commandBuffer.renderFinishedSemaphore, imageIndex);
 
-    // Change frame index to next
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    // Next frame index
+    currentFrame++;
+    currentFrame %= MAX_FRAMES_IN_FLIGHT;
 }

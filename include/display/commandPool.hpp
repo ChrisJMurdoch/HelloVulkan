@@ -17,6 +17,7 @@ public:
     VkSemaphore &renderFinishedSemaphore;
     VkFence& inFlightFence;
     CommandBuffer(VkCommandBuffer &commandBuffer, VkSemaphore &imageAvailableSemaphore, VkSemaphore &renderFinishedSemaphore, VkFence& inFlightFence);
+    void waitForReady(Device const *device) const;
 };
 
 class CommandPool
