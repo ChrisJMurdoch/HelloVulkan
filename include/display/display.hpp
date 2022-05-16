@@ -30,7 +30,6 @@ private:
     CommandPool *commandPool;
     Surface *surface;
     Swapchain *swapChain;
-    uint32_t currentFrame = 0;
     bool framebufferResized = false;
 
 public:

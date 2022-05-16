@@ -20,6 +20,7 @@
 #include <optional>
 #include <set>
 #include <bitset>
+#include <chrono>
 
 /** 
  *  TODO
@@ -33,11 +34,12 @@
  *   - Frames in flight
  *  Change brace inits to strict
  *  Use forward headers
+ *  Clean up main includes
  */
 
 // PARAMETERS
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+const int MAX_FRAMES_IN_FLIGHT = 3;
 std::vector<const char *> const validationLayers{ "VK_LAYER_KHRONOS_validation" };
 std::vector<const char *> const deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
@@ -80,16 +82,31 @@ Display::~Display()
 
 void Display::run()
 {
+    // Record start time
+    int ticks = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // Main loop
     while (!window->shouldClose())
     {
         glfwPollEvents();
         drawFrame();
+
+        // Check framerate
+        ticks++;
+        if (ticks%5000==0)
+        {
+            auto now = std::chrono::high_resolution_clock::now();
+            long long nano = std::chrono::duration_cast<std::chrono::nanoseconds>(now-start).count();
+            std::cout << "Framerate: " << std::floor(ticks/(nano/1000000000.0)) << "Hz." << std::endl;
+        }
     }
 }
 
 void Display::drawFrame()
 {
     // Get current command buffer
+    static int currentFrame = 0;
     CommandBuffer commandBuffer = commandPool->getBuffer(currentFrame);
 
     // Wait for current frame to become available
