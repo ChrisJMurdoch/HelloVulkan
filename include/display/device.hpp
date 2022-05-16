@@ -5,6 +5,23 @@
 
 #include <vulkan/vulkan.h>
 
+class Swapchain;
+
+class Queue
+{
+private:
+    VkQueue const &handle;
+
+private:
+    friend class Device;
+    Queue(VkQueue const &handle);
+
+public:
+    VkQueue const &getHandle() const;
+    void submit(Device const *device, VkSemaphore const &waitSemaphore, VkSemaphore const &signalSemaphore, VkFence const &fence, VkCommandBuffer const &commandBuffer);
+    void present(Swapchain const *swapchain, VkSemaphore const &waitSemaphore, uint32_t imageIndex);
+};
+
 class Device
 {
 private:
@@ -15,5 +32,5 @@ public:
     Device(PhysicalDevice const *physicalDevice, uint32_t graphicsQueueFamilyIndex, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions);
     ~Device();
     VkDevice const &getHandle() const;
-    VkQueue const &getQueue() const;
+    Queue getQueue() const;
 };

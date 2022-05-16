@@ -43,17 +43,11 @@ private:
     bool framebufferResized = false;
 
 private:
-    // GLFW initialisation
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
-
-    // Vulkan initialisation
     void initVulkan();
-        void createSyncObjects();
+    void createSyncObjects();
 
-    // Main render loop
-    void mainLoop();
-        void drawFrame();
-
-    // Free device memory
+    void drawFrame();
+    
     void cleanup();
 };

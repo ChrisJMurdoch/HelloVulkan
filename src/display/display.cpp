@@ -28,6 +28,9 @@
  *  Ensure all new-delete and vkCreate-vkDestroy are complete
  *  Move swapchain recreation from function call to full new-delete calls
  *  Fix class function visibility
+ *  Create classes to encapsulate:
+ *   - Framebuffers in swapchain
+ *   - Frames in flight
  */
 
 // PARAMETERS
@@ -55,7 +58,13 @@ void Display::framebufferResizeCallback(GLFWwindow* window, int width, int heigh
 }
 
 void Display::run() {
-    mainLoop();
+
+    while (!window->shouldClose())
+    {
+        glfwPollEvents();
+        drawFrame();
+    }
+
     cleanup();
 }
 
@@ -70,15 +79,6 @@ void Display::initVulkan()
     swapChain = new Swapchain(device, physicalDevice, window, surface);
     commandPool = new CommandPool(device->getHandle(), graphicsQueueFamilyIndex, MAX_FRAMES_IN_FLIGHT);
     createSyncObjects();
-}
-
-void Display::mainLoop()
-{
-    while (!window->shouldClose())
-    {
-        glfwPollEvents();
-        drawFrame();
-    }
 }
 
 void Display::cleanup()
@@ -172,34 +172,9 @@ void Display::drawFrame()
         });
     });
 
-    // Submit queue
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
-    VkSubmitInfo submitInfo{
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = waitSemaphores,
-        .pWaitDstStageMask = waitStages,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &commandPool->getBuffers()[currentFrame],
-        .signalSemaphoreCount = 1,
-        .pSignalSemaphores = signalSemaphores
-    };
-    vkResetFences(device->getHandle(), 1, &inFlightFences[currentFrame]);
-    failThrow( vkQueueSubmit(device->getQueue(), 1, &submitInfo, inFlightFences[currentFrame]), "Failed to submit draw command buffer." );
-
-    // Present queue
-    VkSwapchainKHR swapChains[] = {swapChain->getHandle()};
-    VkPresentInfoKHR presentInfo{
-        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = signalSemaphores,
-        .swapchainCount = 1,
-        .pSwapchains = swapChains,
-        .pImageIndices = &imageIndex
-    };
-    result = vkQueuePresentKHR(device->getQueue(), &presentInfo);
+    device->getQueue().submit(device, imageAvailableSemaphores[currentFrame], renderFinishedSemaphores[currentFrame], inFlightFences[currentFrame], commandPool->getBuffers()[currentFrame]);
+    
+    device->getQueue().present(swapChain, renderFinishedSemaphores[currentFrame], imageIndex);
 
     // Change frame index to next
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
