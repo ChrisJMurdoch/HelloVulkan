@@ -7,7 +7,7 @@ int main()
 {
     try
     {
-        Display display{1000, 600};
+        Display display{1000, 600, BufferingStrategy::SingleBuffering, true};
         display.run();
     }
     catch (std::exception const &e)

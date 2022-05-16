@@ -35,7 +35,6 @@ target_sources(${APP_NAME}
         src/utility/io.cpp
 
         src/display/display.cpp
-        src/display/choose.cpp
         src/display/renderPass.cpp
         src/display/shaderModule.cpp
         src/display/pipeline.cpp

@@ -1,25 +1,6 @@
 
 #include "display/display.hpp"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#include "display/choose.hpp"
-#include "display/shaderModule.hpp"
-#include "utility/io.hpp"
-
-#include <iostream>
-#include <fstream>
-#include <stdexcept>
-#include <algorithm>
-#include <vector>
-#include <cstring>
-#include <cstdlib>
-#include <cstdint>
-#include <limits>
-#include <optional>
-#include <set>
-#include <bitset>
 #include <chrono>
 
 /** 
@@ -34,31 +15,33 @@
  *   - Frames in flight
  *  Change brace inits to strict
  *  Use forward headers
- *  Clean up main includes
+ *  Decrease coupling
  */
 
-// PARAMETERS
+// CONSTANTS
 
-const int MAX_FRAMES_IN_FLIGHT = 3;
-std::vector<const char *> const validationLayers{ "VK_LAYER_KHRONOS_validation" };
-std::vector<const char *> const deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+std::vector<const char *> const VALIDATION_LAYERS{ "VK_LAYER_KHRONOS_validation" };
+std::vector<const char *> const DEVICE_EXTENSIONS{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 // FUNCTIONS
 
-Display::Display(int windowWidth, int windowHeight)
+Display::Display(int windowWidth, int windowHeight, BufferingStrategy bufferingStrategy, bool enableValidationLayers) : maxFramesInFlight{bufferingStrategy}
 {
+    // Enable validations layers
+    activeValidationLayers = enableValidationLayers ? VALIDATION_LAYERS : std::vector<const char *>{};
+
     // GLFW
     window = new Window(windowWidth, windowHeight, framebufferResizeCallback, this);
 
     // Vulkan
-    instance = new Instance(DebugMessenger::debugMessengerCreateInfo, validationLayers);
+    instance = new Instance(DebugMessenger::debugMessengerCreateInfo, activeValidationLayers);
     debugMessenger = new DebugMessenger(instance);
     surface = new Surface(instance, window);
-    physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface->getHandle(), deviceExtensions);
+    physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface->getHandle(), DEVICE_EXTENSIONS);
     graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface->getHandle());
-    device = new Device(physicalDevice, graphicsQueueFamilyIndex, validationLayers, deviceExtensions);
-    swapChain = new Swapchain(device, physicalDevice, window, surface);
-    commandPool = new CommandPool(device, graphicsQueueFamilyIndex, MAX_FRAMES_IN_FLIGHT);
+    device = new Device(physicalDevice, graphicsQueueFamilyIndex, activeValidationLayers, DEVICE_EXTENSIONS);
+    swapchain = new Swapchain(device, physicalDevice, window, surface);
+    commandPool = new CommandPool(device, graphicsQueueFamilyIndex, maxFramesInFlight);
 }
 
 void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
@@ -71,7 +54,7 @@ Display::~Display()
 {
     vkDeviceWaitIdle(device->getHandle());
     delete commandPool;
-    delete swapChain;
+    delete swapchain;
     delete device;
     delete physicalDevice;
     delete surface;
@@ -89,10 +72,13 @@ void Display::run()
     // Main loop
     while (!window->shouldClose())
     {
+        // Poll for GLFW input updates
         glfwPollEvents();
+
+        // Render frame async
         drawFrame();
 
-        // Check framerate
+        // Display framerate
         ticks++;
         if (ticks%5000==0)
         {
@@ -110,15 +96,15 @@ void Display::drawFrame()
     commandBuffer.waitForReady(device);
 
     // Acquire valid image from swapchain
-    Image image = swapChain->acquireNextImage(commandBuffer, framebufferResized, physicalDevice, window, surface);
+    Image image = swapchain->acquireNextImage(commandBuffer, framebufferResized, physicalDevice, window, surface);
 
     // Record commands into command buffer
-    commandBuffer.record(swapChain, [&](VkCommandBuffer const &commandBuffer)
+    commandBuffer.record(swapchain, [&](VkCommandBuffer const &commandBuffer)
     {
-        swapChain->getRenderPass()->record(swapChain, image, commandBuffer, [&]()
+        swapchain->getRenderPass()->record(swapchain, image, commandBuffer, [&]()
         {
-            // Bind graphics pipeline with specific shaders
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->getPipeline()->getHandle());
+            // Bind graphics pipeline with relevant shaders
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapchain->getPipeline()->getHandle());
 
             // Draw triangles
             vkCmdDraw(commandBuffer, 3, 1, 0, 0);
@@ -129,5 +115,5 @@ void Display::drawFrame()
     device->getQueue().submit(device, commandBuffer.imageAvailableSemaphore, commandBuffer.renderFinishedSemaphore, commandBuffer.inFlightFence, commandBuffer);
     
     // Present image
-    device->getQueue().present(swapChain, commandBuffer.renderFinishedSemaphore, image);
+    device->getQueue().present(swapchain, commandBuffer.renderFinishedSemaphore, image);
 }
