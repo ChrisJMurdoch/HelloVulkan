@@ -20,10 +20,6 @@
 
 class Display
 {
-public:
-    Display(int windowWidth, int windowHeight);
-    void run();
-
 private:
     Window *window;
     Instance *instance;
@@ -34,20 +30,16 @@ private:
     CommandPool *commandPool;
     Surface *surface;
     Swapchain *swapChain;
-
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
-
     bool framebufferResized = false;
 
-private:
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
-    void initVulkan();
-    void createSyncObjects();
+public:
+    Display(int windowWidth, int windowHeight);
+    ~Display();
 
+    void run();
+
+private:
+    static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
     void drawFrame();
-    
-    void cleanup();
 };

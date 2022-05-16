@@ -2,6 +2,7 @@
 #include "display/device.hpp"
 
 #include "display/swapchain.hpp"
+#include "display/commandPool.hpp"
 #include "utility/check.hpp"
 
 Device::Device(PhysicalDevice const *physicalDevice, uint32_t graphicsQueueFamilyIndex, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions)
@@ -60,7 +61,7 @@ VkQueue const &Queue::getHandle() const
     return handle;
 }
 
-void Queue::submit(Device const *device, VkSemaphore const &waitSemaphore, VkSemaphore const &signalSemaphore, VkFence const &fence, VkCommandBuffer const &commandBuffer)
+void Queue::submit(Device const *device, VkSemaphore const &waitSemaphore, VkSemaphore const &signalSemaphore, VkFence const &fence, CommandBuffer const &commandBuffer)
 {
     VkSemaphore waitSemaphores[] = {waitSemaphore};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -71,7 +72,7 @@ void Queue::submit(Device const *device, VkSemaphore const &waitSemaphore, VkSem
         .pWaitSemaphores = waitSemaphores,
         .pWaitDstStageMask = waitStages,
         .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffer,
+        .pCommandBuffers = &commandBuffer.commandBuffer,
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = signalSemaphores
     };
