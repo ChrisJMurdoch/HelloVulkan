@@ -1,6 +1,8 @@
 
 #include "display/commandPool.hpp"
 
+#include "display/device.hpp"
+#include "display/swapchain.hpp"
 #include "utility/check.hpp"
 
 CommandBuffer::CommandBuffer(VkCommandBuffer &commandBuffer, VkSemaphore &imageAvailableSemaphore, VkSemaphore &renderFinishedSemaphore, VkFence& inFlightFence)

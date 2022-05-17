@@ -1,7 +1,18 @@
 
 #include "display/display.hpp"
 
+#include "display/window.hpp"
+#include "display/instance.hpp"
+#include "display/debugMessenger.hpp"
+#include "display/surface.hpp"
+#include "display/physicalDevice.hpp"
+#include "display/device.hpp"
+#include "display/swapchain.hpp"
+#include "display/commandPool.hpp"
+#include "display/image.hpp"
 #include "display/queue.hpp"
+#include "display/pipeline.hpp"
+#include "display/renderPass.hpp"
 
 #include <chrono>
 

@@ -4,6 +4,7 @@
 #include "display/device.hpp"
 #include "display/swapchain.hpp"
 #include "display/commandPool.hpp"
+#include "display/image.hpp"
 #include "utility/check.hpp"
 
 #include <vector>

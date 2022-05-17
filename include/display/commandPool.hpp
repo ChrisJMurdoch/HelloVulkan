@@ -1,12 +1,13 @@
 
 #pragma once
 
-#include "display/swapchain.hpp"
-
 #include <vulkan/vulkan.h>
 
 #include <vector>
 #include <functional>
+
+class Device;
+class Swapchain;
 
 /** Also contains relevant synchronisation objects for command buffer */
 class CommandBuffer

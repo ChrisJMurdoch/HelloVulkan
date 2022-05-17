@@ -1,14 +1,14 @@
 
 #pragma once
 
-#include "display/window.hpp"
-#include "display/instance.hpp"
-#include "display/debugMessenger.hpp"
-#include "display/surface.hpp"
-#include "display/physicalDevice.hpp"
-#include "display/device.hpp"
-#include "display/swapchain.hpp"
-#include "display/commandPool.hpp"
+class Window;
+class Instance;
+class DebugMessenger;
+class Surface;
+class PhysicalDevice;
+class Device;
+class Swapchain;
+class CommandPool;
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

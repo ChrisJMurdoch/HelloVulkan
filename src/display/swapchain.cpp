@@ -1,68 +1,70 @@
 
 #include "display/swapchain.hpp"
 
+#include "display/device.hpp"
+#include "display/physicalDevice.hpp"
+#include "display/window.hpp"
+#include "display/surface.hpp"
 #include "display/renderPass.hpp"
+#include "display/pipeline.hpp"
+#include "display/image.hpp"
 #include "display/commandPool.hpp"
 #include "utility/check.hpp"
 #include "utility/io.hpp"
 
 #include <iostream>
 
-Image::Image(VkImage const &image, VkImageView const &imageView, VkFramebuffer const &framebuffer, uint32_t const index)
-    : image{image}, imageView{imageView}, framebuffer{framebuffer}, index{index}
-{ }
-
-Swapchain::Swapchain(Device const *device, PhysicalDevice const *physicalDevice, Window *window, Surface const *surface) : device(device)
+Swapchain::Swapchain(Device const *device, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface) : device(device)
 {
     create(physicalDevice, window, surface);
 }
 
-void Swapchain::create(PhysicalDevice const *physicalDevice, Window *window, Surface const *surface)
+Swapchain::~Swapchain()
 {
-    createSwapChain(physicalDevice, surface, window);
+    destroy();
+}
+
+void Swapchain::create(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
+{
+    createSwapchain(physicalDevice, surface, window);
     createImageViews();
-    renderPass = new RenderPass(device->getHandle(), swapChainImageFormat);
+    renderPass = new RenderPass(device->getHandle(), format);
     pipeline = new Pipeline(
         device->getHandle(),
         ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
         ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.frag.spv", std::ios::binary)),
-        renderPass, swapChainExtent
+        renderPass, extent
     );
     createFramebuffers();
 }
 
-Swapchain::~Swapchain()
+void Swapchain::destroy()
 {
-    cleanupSwapChain();
-}
-
-void Swapchain::cleanupSwapChain()
-{
-    for (VkFramebuffer const &framebuffer : swapChainFramebuffers)
+    for (VkFramebuffer const &framebuffer : framebuffers)
         vkDestroyFramebuffer(device->getHandle(), framebuffer, nullptr);
     delete pipeline;
     delete renderPass;
-    for (auto imageView : swapChainImageViews)
+    for (auto imageView : imageViews)
         vkDestroyImageView(device->getHandle(), imageView, nullptr);
     vkDestroySwapchainKHR(device->getHandle(), handle, nullptr);
 }
 
-void Swapchain::recreateSwapChain(PhysicalDevice const *physicalDevice, Window *window, Surface const *surface)
+void Swapchain::recreate(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
 {
     // Get dimensions and block until window is visible
     int width=0, height=0;
     window->getFramebufferSize(width, height);
     while (width == 0 || height == 0)
     {
-        window->getFramebufferSize(width, height);
         glfwWaitEvents();
+        window->getFramebufferSize(width, height);
     }
 
-    // Cleanup old chain
+    // Wait until safe to recreate
     vkDeviceWaitIdle(device->getHandle());
-    cleanupSwapChain();
 
-    // Create and activate new chain
+    // Recreate
+    destroy();
     create(physicalDevice, window, surface);
 }
 
@@ -71,14 +73,9 @@ VkSwapchainKHR const &Swapchain::getHandle() const
     return handle;
 }
 
-Image const Swapchain::getImage(int index) const
-{
-    return Image(swapChainImages[index], swapChainImageViews[index], swapChainFramebuffers[index], index);
-}
-
 VkExtent2D const &Swapchain::getExtent() const
 {
-    return swapChainExtent;
+    return extent;
 }
 
 RenderPass const *Swapchain::getRenderPass() const
@@ -91,7 +88,23 @@ Pipeline const *Swapchain::getPipeline() const
     return pipeline;
 }
 
-void Swapchain::createSwapChain(PhysicalDevice const *physicalDevice, Surface const *surface, Window *window)
+Image const Swapchain::acquireNextImage(CommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
+{
+    uint32_t imageIndex;
+    while (
+        framebufferResized ||
+        vkAcquireNextImageKHR(device->getHandle(), handle, UINT64_MAX, commandBuffer.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS
+    )
+    {
+        recreate(physicalDevice, window, surface);
+        framebufferResized = false;
+    }
+    return Image(images[imageIndex], imageViews[imageIndex], framebuffers[imageIndex], imageIndex);
+}
+
+// Creation stages
+
+void Swapchain::createSwapchain(PhysicalDevice const *physicalDevice, Surface const *surface, Window const *window)
 {
     // Get swapchain support details of current physical device
     std::vector<VkSurfaceFormatKHR> const formats = surface->getFormats(physicalDevice->getHandle());
@@ -99,19 +112,20 @@ void Swapchain::createSwapChain(PhysicalDevice const *physicalDevice, Surface co
     VkSurfaceCapabilitiesKHR const capabilities = surface->getCapabilities(physicalDevice->getHandle());
 
     // Choose optimal configurations
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(presentModes);
-    VkExtent2D extent = chooseSwapExtent(capabilities, window->getHandle());
+    VkSurfaceFormatKHR surfaceFormat = chooseSurfaceFormat(formats);
+    format = surfaceFormat.format;
+    VkPresentModeKHR presentMode = choosePresentMode(presentModes);
+    extent = chooseExtent(capabilities, window);
 
     // Calculate optimal image count
     uint32_t minImg=capabilities.minImageCount, maxImg=capabilities.maxImageCount;
     uint32_t imageCount = minImg + 1;
     if (maxImg!=0 && maxImg<imageCount)
         imageCount = maxImg;
-    std::cout << "Using " << imageCount << " (limits: " << minImg << "-" << maxImg << ") images in swapchain." << std::endl;
 
     // Create swapchain
-    VkSwapchainCreateInfoKHR createInfo{
+    VkSwapchainCreateInfoKHR swapchainCreateInfo
+    {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = surface->getHandle(),
         .minImageCount = imageCount,
@@ -126,37 +140,35 @@ void Swapchain::createSwapChain(PhysicalDevice const *physicalDevice, Surface co
         .presentMode = presentMode,
         .clipped = VK_TRUE
     };
-    check::fail( vkCreateSwapchainKHR(device->getHandle(), &createInfo, nullptr, &handle), "vkCreateSwapchainKHR failed." );
+    check::fail( vkCreateSwapchainKHR(device->getHandle(), &swapchainCreateInfo, nullptr, &handle), "vkCreateSwapchainKHR failed." );
 
     // Get generated images
     vkGetSwapchainImagesKHR(device->getHandle(), handle, &imageCount, nullptr);
-    swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device->getHandle(), handle, &imageCount, swapChainImages.data());
-
-    // Save format data
-    swapChainImageFormat = surfaceFormat.format;
-    swapChainExtent = extent;
+    images.resize(imageCount);
+    vkGetSwapchainImagesKHR(device->getHandle(), handle, &imageCount, images.data());
 }
 
-VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(std::vector<VkSurfaceFormatKHR> const &availableFormats)
+VkSurfaceFormatKHR Swapchain::chooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> const &availableFormats)
 {
     for (VkSurfaceFormatKHR const &availableFormat : availableFormats)
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             return availableFormat;
-
+    
+    std::cout << "Suboptimal surface format selected." << std::endl;
     return availableFormats[0];
 }
 
-VkPresentModeKHR Swapchain::chooseSwapPresentMode(std::vector<VkPresentModeKHR> const &availablePresentModes)
+VkPresentModeKHR Swapchain::choosePresentMode(std::vector<VkPresentModeKHR> const &availablePresentModes)
 {
     for (VkPresentModeKHR const &availablePresentMode : availablePresentModes)
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             return availablePresentMode;
 
+    std::cout << "Suboptimal present mode selected." << std::endl;
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D Swapchain::chooseSwapExtent(VkSurfaceCapabilitiesKHR const &capabilities, GLFWwindow *window)
+VkExtent2D Swapchain::chooseExtent(VkSurfaceCapabilitiesKHR const &capabilities, Window const *window)
 {
     // Return default if extent is fixed
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -164,8 +176,9 @@ VkExtent2D Swapchain::chooseSwapExtent(VkSurfaceCapabilitiesKHR const &capabilit
     
     // Return best extent within capabilities' min and max
     int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    return VkExtent2D{
+    window->getFramebufferSize(width, height);
+    return VkExtent2D
+    {
         std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
         std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
     };
@@ -173,22 +186,24 @@ VkExtent2D Swapchain::chooseSwapExtent(VkSurfaceCapabilitiesKHR const &capabilit
 
 void Swapchain::createImageViews()
 {
-    swapChainImageViews.resize(swapChainImages.size());
-
-    for (int i = 0; i < swapChainImages.size(); i++)
+    // For each image
+    imageViews.resize(images.size());
+    for (int i=0; i<images.size(); i++)
     {
         VkImageViewCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = swapChainImages[i],
+            .image = images[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = swapChainImageFormat,
-            .components{
+            .format = format,
+            .components
+            {
                 .r = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .g = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .b = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .a = VK_COMPONENT_SWIZZLE_IDENTITY
             },
-            .subresourceRange{
+            .subresourceRange
+            {
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel = 0,
                 .levelCount = 1,
@@ -196,43 +211,26 @@ void Swapchain::createImageViews()
                 .layerCount = 1
             }
         };
-        check::fail( vkCreateImageView(device->getHandle(), &createInfo, nullptr, &swapChainImageViews[i]), "FvkCreateImageView failed." );
+        check::fail( vkCreateImageView(device->getHandle(), &createInfo, nullptr, &imageViews[i]), "vkCreateImageView failed." );
     }
 }
 
 void Swapchain::createFramebuffers()
 {
-    // One framebuffer for each image view
-    swapChainFramebuffers.resize(swapChainImageViews.size());
-
     // For each image view
-    for (int i = 0; i < swapChainImageViews.size(); i++) {
-
-        // Create framebuffer
-        VkImageView attachments[] = { swapChainImageViews[i] };
+    framebuffers.resize(imageViews.size());
+    for (int i=0; i<imageViews.size(); i++)
+    {
+        std::vector<VkImageView> attachments = { imageViews[i] };
         VkFramebufferCreateInfo framebufferInfo{
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .renderPass = renderPass->getHandle(),
-            .attachmentCount = 1,
-            .pAttachments = attachments,
-            .width = swapChainExtent.width,
-            .height = swapChainExtent.height,
+            .attachmentCount = static_cast<uint32_t>(attachments.size()),
+            .pAttachments = attachments.data(),
+            .width = extent.width,
+            .height = extent.height,
             .layers = 1
         };
-        check::fail( vkCreateFramebuffer(device->getHandle(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]), "Failed to create framebuffer." );
+        check::fail( vkCreateFramebuffer(device->getHandle(), &framebufferInfo, nullptr, &framebuffers[i]), "vkCreateFramebuffer failed." );
     }
-}
-
-Image const Swapchain::acquireNextImage(CommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window *window, Surface const *surface)
-{
-    uint32_t imageIndex;
-    while (
-        framebufferResized ||
-        vkAcquireNextImageKHR(device->getHandle(), handle, UINT64_MAX, commandBuffer.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS
-    )
-    {
-        recreateSwapChain(physicalDevice, window, surface);
-        framebufferResized = false;
-    }
-    return getImage(imageIndex);
 }

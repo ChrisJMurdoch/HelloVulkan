@@ -2,6 +2,7 @@
 #include "display/renderPass.hpp"
 
 #include "display/swapchain.hpp"
+#include "display/image.hpp"
 #include "utility/check.hpp"
 
 #include <exception>
