@@ -12,9 +12,12 @@ private:
     VkInstance handle;
 
 public:
-    Instance(VkDebugUtilsMessengerCreateInfoEXT const &debugMessengerCreateInfo, std::vector<const char *> const &validationLayers);
+    Instance(char const *appName, std::vector<const char *> const &validationLayers, VkDebugUtilsMessengerCreateInfoEXT const &debugMessengerCreateInfo);
     ~Instance();
+    
     VkInstance const &getHandle() const;
+
+private:
     bool checkValidationLayerSupport(std::vector<const char *> const &validationLayers);
     std::vector<char const *> getRequiredExtensions();
 };

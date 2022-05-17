@@ -34,7 +34,7 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     window = new Window(windowWidth, windowHeight, title, framebufferResizeCallback, this);
 
     // Vulkan
-    instance = new Instance(DebugMessenger::debugMessengerCreateInfo, activeValidationLayers);
+    instance = new Instance(title, activeValidationLayers, DebugMessenger::debugMessengerCreateInfo);
     debugMessenger = new DebugMessenger(instance);
     surface = new Surface(instance, window);
     physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface->getHandle(), DEVICE_EXTENSIONS);
