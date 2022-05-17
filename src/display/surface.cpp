@@ -1,9 +1,11 @@
 
 #include "display/surface.hpp"
 
+#include "display/instance.hpp"
+#include "display/window.hpp"
 #include "utility/check.hpp"
 
-Surface::Surface(Instance const *instance, Window *window) : instance(instance)
+Surface::Surface(Instance const *instance, Window const *window) : instance(instance)
 {
     check::fail( glfwCreateWindowSurface(instance->getHandle(), window->getHandle(), nullptr, &handle), "glfwCreateWindowSurface failed." );
 }
