@@ -30,7 +30,7 @@ private:
     Instance *instance;
     DebugMessenger *debugMessenger;
     Surface *surface;
-    PhysicalDevice *physicalDevice; // TODO - possibly move or change to heap allocation
+    PhysicalDevice *physicalDevice;
     uint32_t graphicsQueueFamilyIndex;
     Device *device;
     Swapchain *swapchain;

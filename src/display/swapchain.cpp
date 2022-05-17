@@ -94,15 +94,17 @@ Pipeline const *Swapchain::getPipeline() const
 void Swapchain::createSwapChain(PhysicalDevice const *physicalDevice, Surface const *surface, Window *window)
 {
     // Get swapchain support details of current physical device
-    SwapChainSupportDetails swapChainSupport = PhysicalDevice::querySwapChainSupport(physicalDevice->getHandle(), surface->getHandle());
+    std::vector<VkSurfaceFormatKHR> const formats = surface->getFormats(physicalDevice->getHandle());
+    std::vector<VkPresentModeKHR> const presentModes = surface->getPresentModes(physicalDevice->getHandle());
+    VkSurfaceCapabilitiesKHR const capabilities = surface->getCapabilities(physicalDevice->getHandle());
 
     // Choose optimal configurations
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, window->getHandle());
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(formats);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(presentModes);
+    VkExtent2D extent = chooseSwapExtent(capabilities, window->getHandle());
 
     // Calculate optimal image count
-    uint32_t minImg=swapChainSupport.capabilities.minImageCount, maxImg=swapChainSupport.capabilities.maxImageCount;
+    uint32_t minImg=capabilities.minImageCount, maxImg=capabilities.maxImageCount;
     uint32_t imageCount = minImg + 1;
     if (maxImg!=0 && maxImg<imageCount)
         imageCount = maxImg;
@@ -119,7 +121,7 @@ void Swapchain::createSwapChain(PhysicalDevice const *physicalDevice, Surface co
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .preTransform = swapChainSupport.capabilities.currentTransform,
+        .preTransform = capabilities.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = presentMode,
         .clipped = VK_TRUE

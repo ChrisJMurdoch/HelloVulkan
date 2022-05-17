@@ -1,30 +1,25 @@
 
 #pragma once
 
-#include "display/instance.hpp"
-
 #include <vulkan/vulkan.h>
 
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
+#include <vector>
+
+class Instance;
+class Surface;
 
 class PhysicalDevice
 {
 private:
-    VkDevice const &device;
     VkPhysicalDevice handle;
 
 public:
-    PhysicalDevice(VkDevice const &device, Instance const *instance, VkSurfaceKHR const &surface, std::vector<const char*> const &deviceExtensions);
-    ~PhysicalDevice();
+    PhysicalDevice(Instance const *instance, Surface const *surface, std::vector<const char*> const &deviceExtensions);
     VkPhysicalDevice const &getHandle() const;
 
-    bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR const &surface, std::vector<const char*> const &deviceExtensions);
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device, std::vector<const char*> const &deviceExtensions);
-    static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface);
+    static uint32_t getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface);
 
-    static uint32_t getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface);
+private:
+    static bool checkDeviceSuitability(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface, std::vector<const char*> const &deviceExtensions);
+    static bool checkDeviceExtensionSupport(VkPhysicalDevice const &physicalDeviceHandle, std::vector<const char*> const &deviceExtensions);
 };

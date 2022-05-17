@@ -37,8 +37,8 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     instance = new Instance(title, activeValidationLayers, DebugMessenger::debugMessengerCreateInfo);
     debugMessenger = new DebugMessenger(instance);
     surface = new Surface(instance, window);
-    physicalDevice = new PhysicalDevice(device->getHandle(), instance, surface->getHandle(), DEVICE_EXTENSIONS);
-    graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface->getHandle());
+    physicalDevice = new PhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
+    graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface);
     device = new Device(physicalDevice, graphicsQueueFamilyIndex, activeValidationLayers, DEVICE_EXTENSIONS);
     swapchain = new Swapchain(device, physicalDevice, window, surface);
     commandPool = new CommandPool(device, graphicsQueueFamilyIndex, maxFramesInFlight);

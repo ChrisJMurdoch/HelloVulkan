@@ -1,35 +1,37 @@
 
 #include "display/physicalDevice.hpp"
 
+#include "display/instance.hpp"
+#include "display/surface.hpp"
 #include "utility/check.hpp"
 
+#include <iostream>
 #include <set>
 
-PhysicalDevice::PhysicalDevice(VkDevice const &device, Instance const *instance, VkSurfaceKHR const &surface, std::vector<const char*> const &deviceExtensions) : device(device)
+PhysicalDevice::PhysicalDevice(Instance const *instance, Surface const *surface, std::vector<const char*> const &deviceExtensions)
 {
     // Get physical devices
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance->getHandle(), &deviceCount, nullptr);
-    if (deviceCount == 0)
-        throw std::exception("Failed to find GPU with Vulkan support");
-    std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
-    vkEnumeratePhysicalDevices(instance->getHandle(), &deviceCount, physicalDevices.data());
+    check::zero(deviceCount, "Failed to find GPU with Vulkan support.");
+    std::vector<VkPhysicalDevice> physicalDeviceHandles(deviceCount);
+    vkEnumeratePhysicalDevices(instance->getHandle(), &deviceCount, physicalDeviceHandles.data());
 
     // Select first suitable device
-    for (VkPhysicalDevice const &physicalDevice : physicalDevices) {
-        if (isDeviceSuitable(physicalDevice, surface, deviceExtensions)) {
-            handle = physicalDevice;
+    for (VkPhysicalDevice const &physicalDeviceHandle : physicalDeviceHandles)
+    {
+        if (checkDeviceSuitability(physicalDeviceHandle, surface, deviceExtensions))
+        {
+            handle = physicalDeviceHandle;
+            VkPhysicalDeviceProperties physicalDeviceProperties;
+            vkGetPhysicalDeviceProperties(handle, &physicalDeviceProperties);
+            std::cout << "Selected device: " << physicalDeviceProperties.deviceName << std::endl;
             return;
         }
     }
-    
-    // Throw error if none found
-    throw std::exception("Failed to find GPU with Vulkan support");
-}
 
-PhysicalDevice::~PhysicalDevice()
-{
-    
+    // Throw error if no suitable device found
+    throw std::exception("Failed to find GPU with suitable Vulkan support.");
 }
 
 VkPhysicalDevice const &PhysicalDevice::getHandle() const
@@ -37,12 +39,28 @@ VkPhysicalDevice const &PhysicalDevice::getHandle() const
     return handle;
 }
 
-bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR const &surface, std::vector<const char*> const &deviceExtensions)
+uint32_t PhysicalDevice::getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface)
 {
-    // Get queue support
+    // Retrieve queue families
+    uint32_t nQueueFamilies = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDeviceHandle, &nQueueFamilies, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(nQueueFamilies);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDeviceHandle, &nQueueFamilies, queueFamilies.data());
+
+    // Check each queue family for graphics and present support
+    for (uint32_t i=0; i<queueFamilies.size(); i++)
+        if ( queueFamilies[i].queueFlags&VK_QUEUE_GRAPHICS_BIT && surface->getPresentSupport(physicalDeviceHandle, i))
+            return i;
+
+    throw std::exception("Couldn't find a queue family with both present and graphics capabilities.");
+}
+
+bool PhysicalDevice::checkDeviceSuitability(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface, std::vector<const char*> const &deviceExtensions)
+{
+    // Check queue support
     try
     {
-        getGraphicsQueueFamilyIndex(physicalDevice, surface);
+        getGraphicsQueueFamilyIndex(physicalDeviceHandle, surface);
     }
     catch(std::exception const &e)
     {
@@ -50,24 +68,23 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurface
     }
 
     // Check extension support
-    if ( !checkDeviceExtensionSupport(physicalDevice, deviceExtensions) )
+    if ( !checkDeviceExtensionSupport(physicalDeviceHandle, deviceExtensions) )
         return false;
-    
+
     // Check swapchain support
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
-    if ( swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty())
+    if (surface->getFormats(physicalDeviceHandle).empty() || surface->getPresentModes(physicalDeviceHandle).empty())
         return false;
 
     return true;
 }
 
-bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device, std::vector<const char*> const &deviceExtensions)
+bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice const &physicalDeviceHandle, std::vector<const char*> const &deviceExtensions)
 {
     // Get available extensions
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+    uint32_t nAvailableExtensions;
+    vkEnumerateDeviceExtensionProperties(physicalDeviceHandle, nullptr, &nAvailableExtensions, nullptr);
+    std::vector<VkExtensionProperties> availableExtensions(nAvailableExtensions);
+    vkEnumerateDeviceExtensionProperties(physicalDeviceHandle, nullptr, &nAvailableExtensions, availableExtensions.data());
 
     // Get required extensions
     std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
@@ -75,50 +92,6 @@ bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device, std::v
     // Check each required extension is available
     for (VkExtensionProperties const &extension : availableExtensions)
         requiredExtensions.erase(extension.extensionName);
+    
     return requiredExtensions.empty();
-}
-
-SwapChainSupportDetails PhysicalDevice::querySwapChainSupport(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface)
-{
-    SwapChainSupportDetails details;
-
-    // Get capabilities
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
-
-    // Get surface formats
-    uint32_t nFormats;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &nFormats, nullptr);
-    details.formats.resize(nFormats);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &nFormats, details.formats.data());
-
-    // Get present modes
-    uint32_t nPresentModes;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &nPresentModes, nullptr);
-    details.presentModes.resize(nPresentModes);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &nPresentModes, details.presentModes.data());
-
-    return details;
-}
-
-uint32_t PhysicalDevice::getGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDevice, VkSurfaceKHR const &surface)
-{
-    // Retrieve queue families
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-    // Check each queue family for compatibility
-    for (uint32_t i=0; i<queueFamilies.size(); i++)
-    {
-        VkQueueFamilyProperties const &queueFamily = queueFamilies[i];
-
-        // Check for graphics and present capabilities
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
-        if ( (queueFamily.queueFlags&VK_QUEUE_GRAPHICS_BIT) && presentSupport)
-            return i;
-    }
-
-    throw std::exception("Couldn't find a queue family with present and graphics capabilities.");
 }
