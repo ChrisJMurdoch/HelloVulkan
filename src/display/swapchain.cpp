@@ -33,8 +33,8 @@ void Swapchain::create(PhysicalDevice const *physicalDevice, Window const *windo
     renderPass = new RenderPass(device, format);
     pipeline = new Pipeline(
         device,
-        ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
-        ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.frag.spv", std::ios::binary)),
+        ShaderModule(device, io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
+        ShaderModule(device, io::readFile("shaders/bin/shader.frag.spv", std::ios::binary)),
         renderPass, extent
     );
     createFramebuffers();

@@ -5,14 +5,16 @@
 
 #include <vector>
 
+class Device;
+
 class ShaderModule
 {
 private:
-    VkDevice const &device;
     VkShaderModule handle;
+    Device const *device;
 
 public:
-    ShaderModule(VkDevice const &device, std::vector<char> const &code);
+    ShaderModule(Device const *device, std::vector<char> const &code);
     ~ShaderModule();
     VkShaderModule const &getHandle() const;
 };
