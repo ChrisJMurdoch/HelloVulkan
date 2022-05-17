@@ -17,27 +17,8 @@
 
 #include <chrono>
 
-/** 
- *  TODO
- * 
- *  Change Device::getHandle() args to Device
- *  Ensure all new-delete and vkCreate-vkDestroy are complete
- *  Move swapchain recreation from function call to full new-delete calls
- *  Fix class function visibility
- *  Create classes to encapsulate:
- *   - Framebuffers in swapchain
- *   - Frames in flight
- *  Change brace inits to strict
- *  Use forward headers
- *  Decrease coupling
- */
-
-// CONSTANTS
-
 std::vector<const char *> const VALIDATION_LAYERS{ "VK_LAYER_KHRONOS_validation" };
 std::vector<const char *> const DEVICE_EXTENSIONS{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-// FUNCTIONS
 
 Display::Display(int windowWidth, int windowHeight, char const *title, BufferingStrategy bufferingStrategy, bool enableValidationLayers)
 {
