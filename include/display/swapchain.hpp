@@ -11,6 +11,7 @@
 
 class RenderPass;
 class CommandPool;
+class CommandBuffer;
 
 class Image
 {

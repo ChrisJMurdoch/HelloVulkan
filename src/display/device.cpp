@@ -1,15 +1,16 @@
 
 #include "display/device.hpp"
 
-#include "display/swapchain.hpp"
-#include "display/commandPool.hpp"
+#include "display/physicalDevice.hpp"
+#include "display/queue.hpp"
 #include "utility/check.hpp"
 
 Device::Device(PhysicalDevice const *physicalDevice, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions)
 {
-    // Create array of queues (just combined main queue for now)
+    // Create array of queues (just graphics queue for now)
     float const queuePriority = 1.0f;
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos
+    {
         VkDeviceQueueCreateInfo
         {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -35,7 +36,7 @@ Device::Device(PhysicalDevice const *physicalDevice, std::vector<const char*> co
     check::fail( vkCreateDevice(physicalDevice->getHandle(), &createInfo, nullptr, &handle), "vkCreateDevice failed." );
 
     // Get generated queues
-    vkGetDeviceQueue(handle, physicalDevice->getGraphicsQueueFamilyIndex(), 0, &mainQueue);
+    vkGetDeviceQueue(handle, physicalDevice->getGraphicsQueueFamilyIndex(), 0, &graphicsQueue);
 }
 
 Device::~Device()
@@ -48,49 +49,7 @@ VkDevice const &Device::getHandle() const
     return handle;
 }
 
-Queue Device::getQueue() const
+Queue Device::getGraphicsQueue()
 {
-    return Queue(mainQueue);
-}
-
-Queue::Queue(VkQueue const &handle) : handle(handle)
-{ }
-
-VkQueue const &Queue::getHandle() const
-{
-    return handle;
-}
-
-void Queue::submit(Device const *device, VkSemaphore const &waitSemaphore, VkSemaphore const &signalSemaphore, VkFence const &fence, CommandBuffer const &commandBuffer)
-{
-    VkSemaphore waitSemaphores[] = {waitSemaphore};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signalSemaphores[] = {signalSemaphore};
-    VkSubmitInfo submitInfo{
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = waitSemaphores,
-        .pWaitDstStageMask = waitStages,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffer.commandBuffer,
-        .signalSemaphoreCount = 1,
-        .pSignalSemaphores = signalSemaphores
-    };
-    vkResetFences(device->getHandle(), 1, &fence);
-    check::fail( vkQueueSubmit(handle, 1, &submitInfo, fence), "Failed to submit draw command buffer." );
-}
-
-void Queue::present(Swapchain const *swapchain, VkSemaphore const &waitSemaphore, Image const &image)
-{
-    VkSwapchainKHR swapchains[] = {swapchain->getHandle()};
-    VkSemaphore waitSemaphores[] = {waitSemaphore};
-    VkPresentInfoKHR presentInfo{
-        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = waitSemaphores,
-        .swapchainCount = 1,
-        .pSwapchains = swapchains,
-        .pImageIndices = &image.index
-    };
-    vkQueuePresentKHR(handle, &presentInfo);
+    return Queue(graphicsQueue);
 }

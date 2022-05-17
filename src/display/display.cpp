@@ -1,6 +1,8 @@
 
 #include "display/display.hpp"
 
+#include "display/queue.hpp"
+
 #include <chrono>
 
 /** 
@@ -111,8 +113,8 @@ void Display::drawFrame()
     });
 
     // Submit command buffer to graphics/present queue
-    device->getQueue().submit(device, commandBuffer.imageAvailableSemaphore, commandBuffer.renderFinishedSemaphore, commandBuffer.inFlightFence, commandBuffer);
+    device->getGraphicsQueue().submit(device, commandBuffer);
     
     // Present image
-    device->getQueue().present(swapchain, commandBuffer.renderFinishedSemaphore, image);
+    device->getGraphicsQueue().present(swapchain, commandBuffer, image);
 }

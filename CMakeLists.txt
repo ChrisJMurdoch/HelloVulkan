@@ -46,6 +46,7 @@ target_sources(${APP_NAME}
         src/display/window.cpp
         src/display/surface.cpp
         src/display/swapchain.cpp
+        src/display/queue.cpp
 )
 
 # Add includes
