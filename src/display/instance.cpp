@@ -3,6 +3,9 @@
 
 #include "utility/check.hpp"
 
+#include <set>
+#include <string>
+
 Instance::Instance(char const *appName, std::vector<const char *> const &validationLayers, VkDebugUtilsMessengerCreateInfoEXT const &debugMessengerCreateInfo)
 {
     // Check validation layer support
@@ -53,21 +56,16 @@ bool Instance::checkValidationLayerSupport(std::vector<const char *> const &vali
     std::vector<VkLayerProperties> availableLayers(nAvailableLayers);
     vkEnumerateInstanceLayerProperties(&nAvailableLayers, availableLayers.data());
 
+    // Convert to set
+    std::set<std::string> availableLayersSet;
+    for (VkLayerProperties const &availableLayer : availableLayers)
+        availableLayersSet.insert(availableLayer.layerName);
+
     // Check support for each validation layer
     for (char const *layerName : validationLayers)
-    {
-        // Search for layer in available layers
-        for (VkLayerProperties const &availableLayer : availableLayers)
-            if (strcmp(layerName, availableLayer.layerName) == 0)
-                goto layer_found; // Because C++ doesn't have labelled loops.
-
-        // Not found
-        return false;
-
-        // Continue outer loop
-        layer_found:;
-    }
-
+        if (availableLayersSet.count(layerName)==0)
+            return false;
+    
     return true;
 }
 

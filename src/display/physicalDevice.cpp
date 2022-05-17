@@ -97,12 +97,15 @@ bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice const &physica
     std::vector<VkExtensionProperties> availableExtensions(nAvailableExtensions);
     vkEnumerateDeviceExtensionProperties(physicalDeviceHandle, nullptr, &nAvailableExtensions, availableExtensions.data());
 
-    // Get required extensions
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-    // Check each required extension is available
-    for (VkExtensionProperties const &extension : availableExtensions)
-        requiredExtensions.erase(extension.extensionName);
+    // Convert to set
+    std::set<std::string> availableExtensionsSet;
+    for (VkExtensionProperties const &availableExtension : availableExtensions)
+        availableExtensionsSet.insert(availableExtension.extensionName);
     
-    return requiredExtensions.empty();
+    // Check each required extension is available
+    for (const char *extensionName : deviceExtensions)
+        if (availableExtensionsSet.count(extensionName)==0)
+            return false;
+    
+    return true;
 }
