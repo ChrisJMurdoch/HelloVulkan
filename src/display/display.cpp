@@ -25,10 +25,10 @@ std::vector<const char *> const DEVICE_EXTENSIONS{ VK_KHR_SWAPCHAIN_EXTENSION_NA
 
 // FUNCTIONS
 
-Display::Display(int windowWidth, int windowHeight, char const *title, BufferingStrategy bufferingStrategy, bool enableValidationLayers) : maxFramesInFlight{bufferingStrategy}
+Display::Display(int windowWidth, int windowHeight, char const *title, BufferingStrategy bufferingStrategy, bool enableValidationLayers)
 {
     // Enable validations layers
-    activeValidationLayers = enableValidationLayers ? VALIDATION_LAYERS : std::vector<const char *>{};
+    std::vector<const char *> activeValidationLayers = enableValidationLayers ? VALIDATION_LAYERS : std::vector<const char *>{};
 
     // GLFW
     window = new Window(windowWidth, windowHeight, title, framebufferResizeCallback, this);
@@ -38,13 +38,12 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     debugMessenger = new DebugMessenger(instance);
     surface = new Surface(instance, window);
     physicalDevice = new PhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
-    graphicsQueueFamilyIndex = PhysicalDevice::getGraphicsQueueFamilyIndex(physicalDevice->getHandle(), surface);
-    device = new Device(physicalDevice, graphicsQueueFamilyIndex, activeValidationLayers, DEVICE_EXTENSIONS);
+    device = new Device(physicalDevice, activeValidationLayers, DEVICE_EXTENSIONS);
     swapchain = new Swapchain(device, physicalDevice, window, surface);
-    commandPool = new CommandPool(device, graphicsQueueFamilyIndex, maxFramesInFlight);
+    commandPool = new CommandPool(device, physicalDevice->getGraphicsQueueFamilyIndex(), bufferingStrategy);
 }
 
-void Display::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+void Display::framebufferResizeCallback(GLFWwindow *window, int width, int height)
 {
     Display *display = reinterpret_cast<Display *>(glfwGetWindowUserPointer(window));
     display->framebufferResized = true;

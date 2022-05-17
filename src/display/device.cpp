@@ -5,7 +5,7 @@
 #include "display/commandPool.hpp"
 #include "utility/check.hpp"
 
-Device::Device(PhysicalDevice const *physicalDevice, uint32_t graphicsQueueFamilyIndex, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions)
+Device::Device(PhysicalDevice const *physicalDevice, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions)
 {
     // Create array of queues (just combined main queue for now)
     float const queuePriority = 1.0f;
@@ -13,7 +13,7 @@ Device::Device(PhysicalDevice const *physicalDevice, uint32_t graphicsQueueFamil
         VkDeviceQueueCreateInfo
         {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .queueFamilyIndex = graphicsQueueFamilyIndex,
+            .queueFamilyIndex = physicalDevice->getGraphicsQueueFamilyIndex(),
             .queueCount = 1,
             .pQueuePriorities = &queuePriority
         }
@@ -35,7 +35,7 @@ Device::Device(PhysicalDevice const *physicalDevice, uint32_t graphicsQueueFamil
     check::fail( vkCreateDevice(physicalDevice->getHandle(), &createInfo, nullptr, &handle), "vkCreateDevice failed." );
 
     // Get generated queues
-    vkGetDeviceQueue(handle, graphicsQueueFamilyIndex, 0, &mainQueue);
+    vkGetDeviceQueue(handle, physicalDevice->getGraphicsQueueFamilyIndex(), 0, &mainQueue);
 }
 
 Device::~Device()

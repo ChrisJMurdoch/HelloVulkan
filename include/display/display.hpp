@@ -23,15 +23,11 @@ enum BufferingStrategy
 class Display
 {
 private:
-    int const maxFramesInFlight;
-    std::vector<const char *> activeValidationLayers;
-    
     Window *window;
     Instance *instance;
     DebugMessenger *debugMessenger;
     Surface *surface;
     PhysicalDevice *physicalDevice;
-    uint32_t graphicsQueueFamilyIndex;
     Device *device;
     Swapchain *swapchain;
     CommandPool *commandPool;
