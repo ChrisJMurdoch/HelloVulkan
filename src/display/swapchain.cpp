@@ -10,6 +10,7 @@
 #include "display/image.hpp"
 #include "display/commandPool.hpp"
 #include "display/commandBuffer.hpp"
+#include "display/shaderModule.hpp"
 #include "utility/check.hpp"
 #include "utility/io.hpp"
 
@@ -31,7 +32,7 @@ void Swapchain::create(PhysicalDevice const *physicalDevice, Window const *windo
     createImageViews();
     renderPass = new RenderPass(device->getHandle(), format);
     pipeline = new Pipeline(
-        device->getHandle(),
+        device,
         ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
         ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.frag.spv", std::ios::binary)),
         renderPass, extent
