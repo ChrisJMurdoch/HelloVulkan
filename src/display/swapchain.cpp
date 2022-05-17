@@ -30,7 +30,7 @@ void Swapchain::create(PhysicalDevice const *physicalDevice, Window const *windo
 {
     createSwapchain(physicalDevice, surface, window);
     createImageViews();
-    renderPass = new RenderPass(device->getHandle(), format);
+    renderPass = new RenderPass(device, format);
     pipeline = new Pipeline(
         device,
         ShaderModule(device->getHandle(), io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
@@ -80,7 +80,7 @@ VkExtent2D const &Swapchain::getExtent() const
     return extent;
 }
 
-RenderPass const *Swapchain::getRenderPass() const
+RenderPass *Swapchain::getRenderPass()
 {
     return renderPass;
 }

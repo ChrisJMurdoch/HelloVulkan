@@ -36,7 +36,7 @@ public:
     ~Swapchain();
     VkSwapchainKHR const &getHandle() const;
     VkExtent2D const &getExtent() const;
-    RenderPass const *getRenderPass() const;
+    RenderPass *getRenderPass();
     Pipeline const *getPipeline() const;
     Image const acquireNextImage(CommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);
 

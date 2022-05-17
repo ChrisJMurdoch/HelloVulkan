@@ -114,7 +114,7 @@ void Display::drawFrame()
     // Record commands into command buffer
     commandBuffer.record([&](VkCommandBuffer const &commandBuffer)
     {
-        swapchain->getRenderPass()->record(swapchain, image, commandBuffer, [&]()
+        swapchain->getRenderPass()->run(swapchain, image, commandBuffer, [&]()
         {
             // Bind graphics pipeline with relevant shaders
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapchain->getPipeline()->getHandle());

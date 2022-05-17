@@ -5,19 +5,20 @@
 
 #include <functional>
 
+class Device;
 class Swapchain;
 class Image;
 
 class RenderPass
 {
 private:
-    VkDevice const &device;
+    Device const *device;
     VkRenderPass handle;
 
 public:
-    RenderPass(VkDevice const &device, VkFormat const &format);
+    RenderPass(Device const *device, VkFormat const &format);
     ~RenderPass();
     VkRenderPass const &getHandle() const;
 
-    void record(Swapchain const *swapchain, Image const &image, VkCommandBuffer const &commandBuffer, std::function<void()> commands) const;
+    void run(Swapchain const *swapchain, Image const &image, VkCommandBuffer const &commandBuffer, std::function<void()> commands);
 };
