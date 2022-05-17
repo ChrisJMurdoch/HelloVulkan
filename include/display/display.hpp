@@ -32,6 +32,7 @@ private:
     Device *device;
     Swapchain *swapchain;
     CommandPool *commandPool;
+    VertexBuffer *vertexBuffer;
 
     bool framebufferResized = false;
 
@@ -43,5 +44,5 @@ public:
 
 private:
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
-    void drawFrame(VertexBuffer const &vertexBuffer);
+    void drawFrame();
 };
