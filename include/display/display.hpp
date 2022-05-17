@@ -40,7 +40,8 @@ public:
     Display(int windowWidth, int windowHeight, char const *title, BufferingStrategy bufferingStrategy=DoubleBuffering, bool enableValidationLayers=false);
     ~Display();
 
-    void run();
+    void tick();
+    bool shouldClose() const;
 
 private:
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height);

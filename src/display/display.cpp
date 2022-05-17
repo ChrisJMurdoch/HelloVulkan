@@ -76,30 +76,31 @@ Display::~Display()
     delete window;
 }
 
-void Display::run()
+void Display::tick()
 {
     // Record start time
-    int ticks = 0;
-    auto start = std::chrono::high_resolution_clock::now();
+    static int ticks = 0;
+    static auto start = std::chrono::high_resolution_clock::now();
 
-    // Main loop
-    while (!window->shouldClose())
+    // Poll for GLFW input updates
+    glfwPollEvents();
+
+    // Draw frame
+    drawFrame();
+
+    // Display framerate
+    ticks++;
+    if (ticks%5000==0)
     {
-        // Poll for GLFW input updates
-        glfwPollEvents();
-
-        // Render frame async
-        drawFrame();
-
-        // Display framerate
-        ticks++;
-        if (ticks%5000==0)
-        {
-            auto now = std::chrono::high_resolution_clock::now();
-            long long nano = std::chrono::duration_cast<std::chrono::nanoseconds>(now-start).count();
-            std::cout << "Framerate: " << std::floor(ticks/(nano/1000000000.0)) << "Hz." << std::endl;
-        }
+        auto now = std::chrono::high_resolution_clock::now();
+        long long nano = std::chrono::duration_cast<std::chrono::nanoseconds>(now-start).count();
+        std::cout << "Framerate: " << std::floor(ticks/(nano/1000000000.0)) << "Hz." << std::endl;
     }
+}
+
+bool Display::shouldClose() const
+{
+    return window->shouldClose();
 }
 
 void Display::drawFrame()
