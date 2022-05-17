@@ -20,7 +20,7 @@ private:
     std::vector<VkFence> inFlightFences;
 
 public:
-    CommandPool(Device const *device, uint32_t const graphicsQueueFamilyIndex, int maxFramesInFlight);
+    CommandPool(Device const *device, uint32_t const mainQueueFamilyIndex, int maxFramesInFlight);
     ~CommandPool();
     VkCommandPool const &getHandle() const;
     CommandBuffer nextBuffer();

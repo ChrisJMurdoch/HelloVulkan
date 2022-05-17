@@ -25,8 +25,8 @@ PhysicalDevice::PhysicalDevice(Instance const *instance, Surface const *surface,
             // Set handle
             handle = physicalDeviceHandle;
 
-            // Cache graphics queue family index
-            graphicsQueueFamilyIndex = calcGraphicsQueueFamilyIndex(handle, surface);
+            // Cache main queue family index
+            mainQueueFamilyIndex = calcMainQueueFamilyIndex(handle, surface);
 
             // Display device name
             VkPhysicalDeviceProperties physicalDeviceProperties;
@@ -45,9 +45,9 @@ VkPhysicalDevice const &PhysicalDevice::getHandle() const
     return handle;
 }
 
-uint32_t PhysicalDevice::getGraphicsQueueFamilyIndex() const
+uint32_t PhysicalDevice::getMainQueueFamilyIndex() const
 {
-    return graphicsQueueFamilyIndex;
+    return mainQueueFamilyIndex;
 }
 
 bool PhysicalDevice::checkDeviceSuitability(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface, std::vector<const char*> const &deviceExtensions)
@@ -55,7 +55,7 @@ bool PhysicalDevice::checkDeviceSuitability(VkPhysicalDevice const &physicalDevi
     // Check queue support
     try
     {
-        calcGraphicsQueueFamilyIndex(physicalDeviceHandle, surface);
+        calcMainQueueFamilyIndex(physicalDeviceHandle, surface);
     }
     catch(std::exception const &e)
     {
@@ -73,7 +73,7 @@ bool PhysicalDevice::checkDeviceSuitability(VkPhysicalDevice const &physicalDevi
     return true;
 }
 
-uint32_t PhysicalDevice::calcGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface)
+uint32_t PhysicalDevice::calcMainQueueFamilyIndex(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface)
 {
     // Retrieve queue families
     uint32_t nQueueFamilies = 0;
@@ -81,12 +81,16 @@ uint32_t PhysicalDevice::calcGraphicsQueueFamilyIndex(VkPhysicalDevice const &ph
     std::vector<VkQueueFamilyProperties> queueFamilies(nQueueFamilies);
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDeviceHandle, &nQueueFamilies, queueFamilies.data());
 
-    // Check each queue family for graphics and present support
+    // Check each queue family for graphics, transfer and present support
     for (uint32_t i=0; i<queueFamilies.size(); i++)
-        if ( queueFamilies[i].queueFlags&VK_QUEUE_GRAPHICS_BIT && surface->getPresentSupport(physicalDeviceHandle, i))
+        if (
+            queueFamilies[i].queueFlags&VK_QUEUE_GRAPHICS_BIT &&
+            queueFamilies[i].queueFlags&VK_QUEUE_TRANSFER_BIT &&
+            surface->getPresentSupport(physicalDeviceHandle, i)
+        )
             return i;
 
-    throw std::exception("Couldn't find a queue family with both present and graphics capabilities.");
+    throw std::exception("Couldn't find a queue family with graphics, transfer and present capabilities.");
 }
 
 bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice const &physicalDeviceHandle, std::vector<const char*> const &deviceExtensions)

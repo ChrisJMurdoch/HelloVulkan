@@ -37,7 +37,7 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     physicalDevice = new PhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
     device = new Device(physicalDevice, activeValidationLayers, DEVICE_EXTENSIONS);
     swapchain = new Swapchain(device, physicalDevice, window, surface);
-    commandPool = new CommandPool(device, physicalDevice->getGraphicsQueueFamilyIndex(), bufferingStrategy);
+    commandPool = new CommandPool(device, physicalDevice->getMainQueueFamilyIndex(), bufferingStrategy);
 
     // Create vertex buffer
     std::vector<Vertex> const vertices
@@ -130,9 +130,9 @@ void Display::drawFrame()
         });
     });
 
-    // Submit command buffer to graphics/present queue
-    device->getGraphicsQueue().submit(device, commandBuffer);
+    // Submit command buffer to main queue
+    device->getMainQueue().submit(device, commandBuffer);
     
     // Present image
-    device->getGraphicsQueue().present(swapchain, commandBuffer, image);
+    device->getMainQueue().present(swapchain, commandBuffer, image);
 }

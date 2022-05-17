@@ -5,14 +5,14 @@
 #include "display/commandBuffer.hpp"
 #include "utility/check.hpp"
 
-CommandPool::CommandPool(Device const *device, uint32_t const graphicsQueueFamilyIndex, int maxFramesInFlight) : device(device)
+CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyIndex, int maxFramesInFlight) : device(device)
 {
     // Create CommandPool
     VkCommandPoolCreateInfo poolInfo
     {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = graphicsQueueFamilyIndex
+        .queueFamilyIndex = mainQueueFamilyIndex
     };
     check::fail( vkCreateCommandPool(device->getHandle(), &poolInfo, nullptr, &handle), "vkCreateCommandPool failed." );
 

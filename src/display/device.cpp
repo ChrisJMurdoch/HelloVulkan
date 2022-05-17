@@ -7,14 +7,14 @@
 
 Device::Device(PhysicalDevice const *physicalDevice, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions)
 {
-    // Create array of queues (just graphics queue for now)
+    // Create array of queues (just main queue for now)
     float const queuePriority = 1.0f;
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos
     {
         VkDeviceQueueCreateInfo
         {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .queueFamilyIndex = physicalDevice->getGraphicsQueueFamilyIndex(),
+            .queueFamilyIndex = physicalDevice->getMainQueueFamilyIndex(),
             .queueCount = 1,
             .pQueuePriorities = &queuePriority
         }
@@ -36,7 +36,7 @@ Device::Device(PhysicalDevice const *physicalDevice, std::vector<const char*> co
     check::fail( vkCreateDevice(physicalDevice->getHandle(), &createInfo, nullptr, &handle), "vkCreateDevice failed." );
 
     // Get generated queues
-    vkGetDeviceQueue(handle, physicalDevice->getGraphicsQueueFamilyIndex(), 0, &graphicsQueue);
+    vkGetDeviceQueue(handle, physicalDevice->getMainQueueFamilyIndex(), 0, &mainQueue);
 }
 
 Device::~Device()
@@ -49,7 +49,7 @@ VkDevice const &Device::getHandle() const
     return handle;
 }
 
-Queue Device::getGraphicsQueue()
+Queue Device::getMainQueue()
 {
-    return Queue(graphicsQueue);
+    return Queue(mainQueue);
 }

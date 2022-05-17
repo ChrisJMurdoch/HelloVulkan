@@ -12,15 +12,15 @@ class PhysicalDevice
 {
 private:
     VkPhysicalDevice handle;
-    uint32_t graphicsQueueFamilyIndex;
+    uint32_t mainQueueFamilyIndex;
 
 public:
     PhysicalDevice(Instance const *instance, Surface const *surface, std::vector<const char*> const &deviceExtensions);
     VkPhysicalDevice const &getHandle() const;
-    uint32_t getGraphicsQueueFamilyIndex() const;
+    uint32_t getMainQueueFamilyIndex() const;
 
 private:
     static bool checkDeviceSuitability(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface, std::vector<const char*> const &deviceExtensions);
-    static uint32_t calcGraphicsQueueFamilyIndex(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface);
+    static uint32_t calcMainQueueFamilyIndex(VkPhysicalDevice const &physicalDeviceHandle, Surface const *surface);
     static bool checkDeviceExtensionSupport(VkPhysicalDevice const &physicalDeviceHandle, std::vector<const char*> const &deviceExtensions);
 };

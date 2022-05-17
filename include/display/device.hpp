@@ -12,11 +12,11 @@ class Device
 {
 private:
     VkDevice handle;
-    VkQueue graphicsQueue;
+    VkQueue mainQueue;
 
 public:
     Device(PhysicalDevice const *physicalDevice, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions);
     ~Device();
     VkDevice const &getHandle() const;
-    Queue getGraphicsQueue();
+    Queue getMainQueue();
 };
