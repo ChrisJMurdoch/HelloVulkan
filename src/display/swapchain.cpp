@@ -9,6 +9,7 @@
 #include "display/pipeline.hpp"
 #include "display/image.hpp"
 #include "display/commandPool.hpp"
+#include "display/commandBuffer.hpp"
 #include "utility/check.hpp"
 #include "utility/io.hpp"
 

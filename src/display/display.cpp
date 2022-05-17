@@ -13,6 +13,7 @@
 #include "display/queue.hpp"
 #include "display/pipeline.hpp"
 #include "display/renderPass.hpp"
+#include "display/commandBuffer.hpp"
 
 #include <chrono>
 
@@ -111,7 +112,7 @@ void Display::drawFrame()
     Image image = swapchain->acquireNextImage(commandBuffer, framebufferResized, physicalDevice, window, surface);
 
     // Record commands into command buffer
-    commandBuffer.record(swapchain, [&](VkCommandBuffer const &commandBuffer)
+    commandBuffer.record([&](VkCommandBuffer const &commandBuffer)
     {
         swapchain->getRenderPass()->record(swapchain, image, commandBuffer, [&]()
         {

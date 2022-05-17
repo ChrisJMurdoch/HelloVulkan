@@ -4,23 +4,9 @@
 #include <vulkan/vulkan.h>
 
 #include <vector>
-#include <functional>
 
 class Device;
-class Swapchain;
-
-/** Also contains relevant synchronisation objects for command buffer */
-class CommandBuffer
-{
-public:
-    VkCommandBuffer &commandBuffer;
-    VkSemaphore &imageAvailableSemaphore;
-    VkSemaphore &renderFinishedSemaphore;
-    VkFence& inFlightFence;
-    CommandBuffer(VkCommandBuffer &commandBuffer, VkSemaphore &imageAvailableSemaphore, VkSemaphore &renderFinishedSemaphore, VkFence& inFlightFence);
-    void waitForReady(Device const *device) const;
-    void record(Swapchain const *swapchain, std::function<void(VkCommandBuffer const &commandBuffer)> commands);
-};
+class CommandBuffer;
 
 class CommandPool
 {

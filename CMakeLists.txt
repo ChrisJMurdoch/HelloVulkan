@@ -48,6 +48,7 @@ target_sources(${APP_NAME}
         src/display/swapchain.cpp
         src/display/queue.cpp
         src/display/image.cpp
+        src/display/commandBuffer.cpp
 )
 
 # Add includes

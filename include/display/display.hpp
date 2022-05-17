@@ -1,6 +1,9 @@
 
 #pragma once
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 class Window;
 class Instance;
 class DebugMessenger;
@@ -9,9 +12,6 @@ class PhysicalDevice;
 class Device;
 class Swapchain;
 class CommandPool;
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 
 enum BufferingStrategy
 {

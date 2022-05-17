@@ -5,6 +5,7 @@
 #include "display/swapchain.hpp"
 #include "display/commandPool.hpp"
 #include "display/image.hpp"
+#include "display/commandBuffer.hpp"
 #include "utility/check.hpp"
 
 #include <vector>
@@ -29,7 +30,7 @@ void Queue::submit(Device const *device, CommandBuffer const &commandBuffer)
         .pWaitSemaphores = waitSemaphores.data(),
         .pWaitDstStageMask = waitStages.data(),
         .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffer.commandBuffer,
+        .pCommandBuffers = &commandBuffer.handle,
         .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
         .pSignalSemaphores = signalSemaphores.data()
     };
