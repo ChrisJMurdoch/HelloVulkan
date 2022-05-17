@@ -12,6 +12,7 @@ class PhysicalDevice;
 class Device;
 class Swapchain;
 class CommandPool;
+class VertexBuffer;
 
 enum BufferingStrategy
 {
@@ -42,5 +43,5 @@ public:
 
 private:
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
-    void drawFrame();
+    void drawFrame(VertexBuffer const &vertexBuffer);
 };

@@ -14,6 +14,8 @@
 #include "display/pipeline.hpp"
 #include "display/renderPass.hpp"
 #include "display/commandBuffer.hpp"
+#include "display/vertex.hpp"
+#include "display/vertexBuffer.hpp"
 
 #include <chrono>
 
@@ -63,6 +65,15 @@ void Display::run()
     int ticks = 0;
     auto start = std::chrono::high_resolution_clock::now();
 
+    // Create vertex buffer
+    std::vector<Vertex> const vertices
+    {
+        { {0.0f, -0.5f}, {1.0f, 1.0f, 1.0f} },
+        { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
+        { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
+    };
+    VertexBuffer vertexBuffer(device, vertices, physicalDevice);
+
     // Main loop
     while (!window->shouldClose())
     {
@@ -70,7 +81,7 @@ void Display::run()
         glfwPollEvents();
 
         // Render frame async
-        drawFrame();
+        drawFrame(vertexBuffer);
 
         // Display framerate
         ticks++;
@@ -83,7 +94,7 @@ void Display::run()
     }
 }
 
-void Display::drawFrame()
+void Display::drawFrame(VertexBuffer const &vertexBuffer)
 {
     // Get next command buffer and wait till ready
     CommandBuffer commandBuffer = commandPool->nextBuffer();
@@ -100,8 +111,13 @@ void Display::drawFrame()
             // Bind graphics pipeline with relevant shaders
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapchain->getPipeline()->getHandle());
 
+            // Bind vertex buffers
+            std::vector<VkBuffer> vertexBuffers { vertexBuffer.getHandle() };
+            std::vector<VkDeviceSize> offsets   { vertexBuffer.getOffset() };
+            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
+
             // Draw triangles
-            vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+            vkCmdDraw(commandBuffer, vertexBuffer.getNVertices(), 1, 0, 0);
         });
     });
 

@@ -4,6 +4,7 @@
 #include "display/device.hpp"
 #include "display/shaderModule.hpp"
 #include "display/renderPass.hpp"
+#include "display/vertex.hpp"
 #include "utility/check.hpp"
 
 #include <vector>
@@ -30,11 +31,15 @@ Pipeline::Pipeline(Device const *device, ShaderModule const &vertShaderModule, S
     };
 
     // Specify vertex input state
+    VkVertexInputBindingDescription vertexBindingDescription = Vertex::getBindingDescription();
+    std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = Vertex::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 0,
-        .vertexAttributeDescriptionCount = 0
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &vertexBindingDescription,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescriptions.size()),
+        .pVertexAttributeDescriptions = vertexAttributeDescriptions.data()
     };
 
     // Specify input assembly state
