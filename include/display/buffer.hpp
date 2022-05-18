@@ -19,7 +19,7 @@ private:
 protected:
     Buffer
     (
-        Device const *device, std::vector<Vertex> const &vertices, PhysicalDevice const *physicalDevice,
+        Device const *device, void const *sourceData, PhysicalDevice const *physicalDevice,
         VkDeviceSize const &size, VkBufferUsageFlags const &usage, VkMemoryPropertyFlags const &properties
     );
 

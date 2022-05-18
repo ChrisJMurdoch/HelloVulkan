@@ -6,7 +6,7 @@
 
 VertexBuffer::VertexBuffer(Device const *device, std::vector<Vertex> const &vertices, PhysicalDevice const *physicalDevice)
     : Buffer(
-        device, vertices, physicalDevice,
+        device, vertices.data(), physicalDevice,
         sizeof(vertices[0])*vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     ), nVertices(vertices.size())
 {

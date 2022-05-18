@@ -20,7 +20,7 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, P
 
 Buffer::Buffer
 (
-    Device const *device, std::vector<Vertex> const &vertices, PhysicalDevice const *physicalDevice,
+    Device const *device, void const *sourceData, PhysicalDevice const *physicalDevice,
     VkDeviceSize const &size, VkBufferUsageFlags const &usage, VkMemoryPropertyFlags const &properties
 ) : device(device)
 {
@@ -53,7 +53,7 @@ Buffer::Buffer
     // Copy memory over
     void *data;
     vkMapMemory(device->getHandle(), memory, 0, bufferInfo.size, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(bufferInfo.size));
+    memcpy(data, sourceData, static_cast<size_t>(bufferInfo.size));
     vkUnmapMemory(device->getHandle(), memory);
 }
 
