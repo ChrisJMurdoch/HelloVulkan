@@ -9,6 +9,8 @@
 
 class Vertex;
 class PhysicalDevice;
+class CommandPool;
+class Queue;
 
 class VoidBuffer
 {
@@ -32,4 +34,5 @@ public:
     VkBuffer const &getHandle() const;
     uint32_t getOffset() const;
     void memcpy(size_t sourceDataSize, void const *sourceData);
+    void transfer(CommandPool *commandPool, Queue queue, VoidBuffer const &sourceBuffer);
 };

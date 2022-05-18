@@ -17,7 +17,7 @@ CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyInd
     check::fail( vkCreateCommandPool(device->getHandle(), &poolInfo, nullptr, &handle), "vkCreateCommandPool failed." );
 
     // Allocate command buffers
-    drawCommandBufferHandles.resize(maxFramesInFlight);
+    std::vector<VkCommandBuffer> drawCommandBufferHandles(maxFramesInFlight);
     VkCommandBufferAllocateInfo allocInfo
     {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -30,7 +30,7 @@ CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyInd
     // Create synchronised command buffer objects
     drawCommandBuffers.reserve(drawCommandBufferHandles.size());
     for (VkCommandBuffer const &commandBufferHandle : drawCommandBufferHandles)
-        drawCommandBuffers.push_back(DrawCommandBuffer(commandBufferHandle, device));
+        drawCommandBuffers.push_back(DrawCommandBuffer(device, this, commandBufferHandle));
 }
 
 CommandPool::~CommandPool()
@@ -50,4 +50,21 @@ DrawCommandBuffer &CommandPool::nextBuffer()
     DrawCommandBuffer &commandBuffer = drawCommandBuffers[index];
     index++; index%=drawCommandBuffers.size();
     return commandBuffer;
+}
+
+CommandBuffer CommandPool::allocateNewBuffer()
+{
+    // Allocate command buffers
+    VkCommandBuffer commandBufferHandle;
+    VkCommandBufferAllocateInfo allocInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = handle,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+    check::fail( vkAllocateCommandBuffers(device->getHandle(), &allocInfo, &commandBufferHandle), "vkAllocateCommandBuffers failed." );
+
+    // Create synchronised command buffer objects
+    return DrawCommandBuffer(device, this, commandBufferHandle);
 }

@@ -2,6 +2,9 @@
 #include "memory/voidBuffer.hpp"
 
 #include "configuration/physicalDevice.hpp"
+#include "command/commandPool.hpp"
+#include "command/commandBuffer.hpp"
+#include "configuration/queue.hpp"
 #include "utility/check.hpp"
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice const *physicalDevice)
@@ -76,4 +79,23 @@ void VoidBuffer::memcpy(size_t sourceDataSize, void const *sourceData)
 
     // Unmap device memory
     vkUnmapMemory(device->getHandle(), memory);
+}
+
+void VoidBuffer::transfer(CommandPool *commandPool, Queue queue, VoidBuffer const &sourceBuffer)
+{
+    // Create one-use command buffer
+    CommandBuffer transferCommandBuffer = commandPool->allocateNewBuffer();
+
+    // Record transfer command
+    transferCommandBuffer.record([&](VkCommandBuffer const &commandBuffer)
+    {
+        VkBufferCopy copyRegion { .size = sourceBuffer.size };
+        vkCmdCopyBuffer(commandBuffer, sourceBuffer.getHandle(), handle, 1, &copyRegion);
+    }, true);
+
+    // Submit command buffer to main queue
+    queue.submit(device, transferCommandBuffer);
+
+    // Wait for transfer to finish before freeing command buffer - TODO: batch transfers together to avoid multiple waits
+    vkQueueWaitIdle(queue.getHandle());
 }

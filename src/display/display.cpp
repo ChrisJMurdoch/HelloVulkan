@@ -47,11 +47,14 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
         { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
         { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
     };
-    int verticesSize = util::vecsizeof(vertices);
 
-    // Create vertex buffer
-    vertexBuffer = new TypedBuffer<Vertex>(device, physicalDevice, verticesSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    vertexBuffer->memcpy(vertices);
+    // Create staging buffer and copy over data
+    TypedBuffer<Vertex> stagingBuffer(device, physicalDevice, util::vecsizeof(vertices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    stagingBuffer.memcpy(vertices);
+
+    // Create vertex buffer and transfer data
+    vertexBuffer = new TypedBuffer<Vertex>(device, physicalDevice, util::vecsizeof(vertices), VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vertexBuffer->transfer(commandPool, device->getMainQueue(), stagingBuffer);
 }
 
 void Display::framebufferResizeCallback(GLFWwindow *window, int width, int height)
@@ -136,7 +139,7 @@ void Display::drawFrame()
     });
 
     // Submit command buffer to main queue
-    device->getMainQueue().submit(device, commandBuffer);
+    device->getMainQueue().drawSubmit(device, commandBuffer);
     
     // Present image
     device->getMainQueue().present(swapchain, commandBuffer, image);

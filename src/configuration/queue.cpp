@@ -6,6 +6,7 @@
 #include "command/commandPool.hpp"
 #include "swapchain/image.hpp"
 #include "command/drawCommandBuffer.hpp"
+#include "command/commandBuffer.hpp"
 #include "utility/check.hpp"
 
 #include <vector>
@@ -18,7 +19,18 @@ VkQueue const &Queue::getHandle() const
     return handle;
 }
 
-void Queue::submit(Device const *device, DrawCommandBuffer const &commandBuffer)
+void Queue::submit(Device const *device, CommandBuffer const &commandBuffer)
+{
+    VkSubmitInfo submitInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &commandBuffer.getHandle()
+    };
+    check::fail( vkQueueSubmit(handle, 1, &submitInfo, VK_NULL_HANDLE), "vkQueueSubmit failed." );
+}
+
+void Queue::drawSubmit(Device const *device, DrawCommandBuffer const &commandBuffer)
 {
     std::vector<VkSemaphore> waitSemaphores = {commandBuffer.getImageAvailableSemaphore()};
     std::vector<VkPipelineStageFlags> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};

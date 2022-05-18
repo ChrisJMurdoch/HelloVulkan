@@ -4,7 +4,7 @@
 #include "configuration/device.hpp"
 #include "utility/check.hpp"
 
-DrawCommandBuffer::DrawCommandBuffer(VkCommandBuffer const &handle, Device const *device) : CommandBuffer(handle), device(device)
+DrawCommandBuffer::DrawCommandBuffer(Device const *device, CommandPool const *commandPool, VkCommandBuffer const &handle) : CommandBuffer(device, commandPool, handle)
 {
     // Create sync objects
     static VkSemaphoreCreateInfo semaphoreInfo
@@ -21,7 +21,7 @@ DrawCommandBuffer::DrawCommandBuffer(VkCommandBuffer const &handle, Device const
     check::fail( vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &inFlightFence), "vkCreateFence failed." );
 }
 
-DrawCommandBuffer::DrawCommandBuffer(DrawCommandBuffer &&old) : CommandBuffer(old), device(old.device),
+DrawCommandBuffer::DrawCommandBuffer(DrawCommandBuffer &&old) : CommandBuffer(std::move(old)),
     imageAvailableSemaphore(old.imageAvailableSemaphore), renderFinishedSemaphore(old.renderFinishedSemaphore), inFlightFence(old.inFlightFence)
 {
     old.imageAvailableSemaphore = VK_NULL_HANDLE;

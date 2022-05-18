@@ -5,6 +5,7 @@
 
 class Device;
 class Swapchain;
+class CommandBuffer;
 class DrawCommandBuffer;
 class Image;
 
@@ -19,6 +20,7 @@ private:
 
 public:
     VkQueue const &getHandle() const;
-    void submit(Device const *device, DrawCommandBuffer const &commandBuffer);
+    void submit(Device const *device, CommandBuffer const &commandBuffer);
+    void drawSubmit(Device const *device, DrawCommandBuffer const &commandBuffer);
     void present(Swapchain const *swapchain, DrawCommandBuffer const &commandBuffer, Image const &image);
 };

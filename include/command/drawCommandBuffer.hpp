@@ -5,8 +5,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include <functional>
-
 class Device;
 
 class DrawCommandBuffer : public CommandBuffer
@@ -15,10 +13,9 @@ private:
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderFinishedSemaphore;
     VkFence inFlightFence;
-    Device const *device;
 
 public:
-    DrawCommandBuffer(VkCommandBuffer const &handle, Device const *device);
+    DrawCommandBuffer(Device const *device, CommandPool const *commandPool, VkCommandBuffer const &handle);
     DrawCommandBuffer(DrawCommandBuffer &&old);
     ~DrawCommandBuffer();
 

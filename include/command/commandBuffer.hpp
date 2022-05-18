@@ -6,16 +6,21 @@
 #include <functional>
 
 class Device;
-class Swapchain;
+class CommandPool;
 
 class CommandBuffer
 {
-private:
-    VkCommandBuffer const &handle;
+protected:
+    Device const *device;
+    CommandPool const *commandPool;
+    VkCommandBuffer handle;
 
 public:
-    CommandBuffer(VkCommandBuffer const &handle);
+    CommandBuffer(Device const *device, CommandPool const *commandPool, VkCommandBuffer const &handle);
+    CommandBuffer(CommandBuffer &&old);
+    ~CommandBuffer();
+
     VkCommandBuffer const &getHandle() const;
 
-    void record(std::function<void(VkCommandBuffer const &commandBuffer)> commands);
+    void record(std::function<void(VkCommandBuffer const &commandBuffer)> commands, bool singleUse=false);
 };

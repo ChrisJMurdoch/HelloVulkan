@@ -6,6 +6,7 @@
 #include <vector>
 
 class Device;
+class CommandBuffer;
 class DrawCommandBuffer;
 
 class CommandPool
@@ -13,7 +14,6 @@ class CommandPool
 private:
     Device const *device;
     VkCommandPool handle;
-    std::vector<VkCommandBuffer> drawCommandBufferHandles;
     std::vector<DrawCommandBuffer> drawCommandBuffers;
 
 public:
@@ -21,4 +21,5 @@ public:
     ~CommandPool();
     VkCommandPool const &getHandle() const;
     DrawCommandBuffer &nextBuffer();
+    CommandBuffer allocateNewBuffer();
 };
