@@ -51,6 +51,7 @@ target_sources(${APP_NAME}
         src/display/commandBuffer.cpp
         src/display/vertex.cpp
         src/display/vertexBuffer.cpp
+        src/display/buffer.cpp
 )
 
 # Add includes
