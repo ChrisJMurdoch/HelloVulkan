@@ -10,14 +10,21 @@ class Swapchain;
 
 class CommandBuffer
 {
-public:
+private:
+    Device const *device;
     VkCommandBuffer const &handle;
-    VkSemaphore const &imageAvailableSemaphore;
-    VkSemaphore const &renderFinishedSemaphore;
-    VkFence const &inFlightFence;
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
+    VkFence inFlightFence;
 
 public:
-    CommandBuffer(VkCommandBuffer const &handle, VkSemaphore const &imageAvailableSemaphore, VkSemaphore const &renderFinishedSemaphore, VkFence const &inFlightFence);
+    CommandBuffer(Device const *device, VkCommandBuffer const &handle);
+    CommandBuffer(CommandBuffer &&old);
+    ~CommandBuffer();
+    VkCommandBuffer const &getHandle() const;
+    VkSemaphore const &getImageAvailableSemaphore() const;
+    VkSemaphore const &getRenderFinishedSemaphore() const;
+    VkFence const &getInFlightFence() const;
 
     void waitForReady(Device const *device) const;
     void record(std::function<void(VkCommandBuffer const &commandBuffer)> commands);

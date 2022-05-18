@@ -13,15 +13,12 @@ class CommandPool
 private:
     Device const *device;
     VkCommandPool handle;
-
-    std::vector<VkCommandBuffer> commandBuffers;
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
+    std::vector<VkCommandBuffer> commandBufferHandles;
+    std::vector<CommandBuffer> commandBuffers;
 
 public:
     CommandPool(Device const *device, uint32_t const mainQueueFamilyIndex, int maxFramesInFlight);
     ~CommandPool();
     VkCommandPool const &getHandle() const;
-    CommandBuffer nextBuffer();
+    CommandBuffer &nextBuffer();
 };

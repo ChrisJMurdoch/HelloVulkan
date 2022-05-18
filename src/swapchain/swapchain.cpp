@@ -95,7 +95,7 @@ Image const Swapchain::acquireNextImage(CommandBuffer const &commandBuffer, bool
     uint32_t imageIndex;
     while (
         framebufferResized ||
-        vkAcquireNextImageKHR(device->getHandle(), handle, UINT64_MAX, commandBuffer.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS
+        vkAcquireNextImageKHR(device->getHandle(), handle, UINT64_MAX, commandBuffer.getImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS
     )
     {
         recreate(physicalDevice, window, surface);

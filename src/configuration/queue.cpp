@@ -20,9 +20,9 @@ VkQueue const &Queue::getHandle() const
 
 void Queue::submit(Device const *device, CommandBuffer const &commandBuffer)
 {
-    std::vector<VkSemaphore> waitSemaphores = {commandBuffer.imageAvailableSemaphore};
+    std::vector<VkSemaphore> waitSemaphores = {commandBuffer.getImageAvailableSemaphore()};
     std::vector<VkPipelineStageFlags> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    std::vector<VkSemaphore> signalSemaphores = {commandBuffer.renderFinishedSemaphore};
+    std::vector<VkSemaphore> signalSemaphores = {commandBuffer.getRenderFinishedSemaphore()};
     VkSubmitInfo submitInfo
     {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -30,18 +30,18 @@ void Queue::submit(Device const *device, CommandBuffer const &commandBuffer)
         .pWaitSemaphores = waitSemaphores.data(),
         .pWaitDstStageMask = waitStages.data(),
         .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffer.handle,
+        .pCommandBuffers = &commandBuffer.getHandle(),
         .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
         .pSignalSemaphores = signalSemaphores.data()
     };
-    vkResetFences(device->getHandle(), 1, &commandBuffer.inFlightFence);
-    check::fail( vkQueueSubmit(handle, 1, &submitInfo, commandBuffer.inFlightFence), "vkQueueSubmit failed." );
+    vkResetFences(device->getHandle(), 1, &commandBuffer.getInFlightFence());
+    check::fail( vkQueueSubmit(handle, 1, &submitInfo, commandBuffer.getInFlightFence()), "vkQueueSubmit failed." );
 }
 
 void Queue::present(Swapchain const *swapchain, CommandBuffer const &commandBuffer, Image const &image)
 {
     std::vector<VkSwapchainKHR> swapchains = {swapchain->getHandle()};
-    std::vector<VkSemaphore> waitSemaphores = {commandBuffer.renderFinishedSemaphore};
+    std::vector<VkSemaphore> waitSemaphores = {commandBuffer.getRenderFinishedSemaphore()};
     VkPresentInfoKHR presentInfo
     {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,

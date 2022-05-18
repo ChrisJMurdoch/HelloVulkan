@@ -17,50 +17,25 @@ CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyInd
     check::fail( vkCreateCommandPool(device->getHandle(), &poolInfo, nullptr, &handle), "vkCreateCommandPool failed." );
 
     // Allocate command buffers
-    commandBuffers.resize(maxFramesInFlight);
+    commandBufferHandles.resize(maxFramesInFlight);
     VkCommandBufferAllocateInfo allocInfo
     {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = handle,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = (uint32_t) commandBuffers.size()
+        .commandBufferCount = (uint32_t) commandBufferHandles.size()
     };
-    check::fail( vkAllocateCommandBuffers(device->getHandle(), &allocInfo, commandBuffers.data()), "vkAllocateCommandBuffers failed." );
+    check::fail( vkAllocateCommandBuffers(device->getHandle(), &allocInfo, commandBufferHandles.data()), "vkAllocateCommandBuffers failed." );
 
-    // One set of mutexes for each frame in flight (command buffer)
-    imageAvailableSemaphores.resize(maxFramesInFlight);
-    renderFinishedSemaphores.resize(maxFramesInFlight);
-    inFlightFences.resize(maxFramesInFlight);
-
-    // Mutex creation info
-    VkSemaphoreCreateInfo semaphoreInfo
-    {
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
-    };
-    VkFenceCreateInfo fenceInfo
-    {
-        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-        .flags = VK_FENCE_CREATE_SIGNALED_BIT
-    };
-
-    // Create mutexes for each frame in flight (command buffer)
-    for (int i=0; i<maxFramesInFlight; i++)
-    {
-        check::fail( vkCreateSemaphore(device->getHandle(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]), "vkCreateSemaphore failed." );
-        check::fail( vkCreateSemaphore(device->getHandle(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]), "vkCreateSemaphore failed." );
-        check::fail( vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &inFlightFences[i]), "vkCreateFence failed." );
-    }
+    // Create synchronised command buffer objects
+    commandBuffers.reserve(commandBufferHandles.size());
+    for (VkCommandBuffer const &commandBufferHandle : commandBufferHandles)
+        commandBuffers.push_back(CommandBuffer(device, commandBufferHandle));
 }
 
 CommandPool::~CommandPool()
 {
-    for (int i=0; i<renderFinishedSemaphores.size(); i++)
-    {
-        vkDestroySemaphore(device->getHandle(), renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(device->getHandle(), imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(device->getHandle(), inFlightFences[i], nullptr);
-    }
-
+    commandBuffers.clear();
     vkDestroyCommandPool(device->getHandle(), handle, nullptr);
 }
 
@@ -69,10 +44,10 @@ VkCommandPool const &CommandPool::getHandle() const
     return handle;
 }
 
-CommandBuffer CommandPool::nextBuffer()
+CommandBuffer &CommandPool::nextBuffer()
 {
     static int index = 0;
-    return CommandBuffer(commandBuffers[index], imageAvailableSemaphores[index], renderFinishedSemaphores[index], inFlightFences[index]);
-    index++;
-    index %= commandBuffers.size();
+    CommandBuffer &commandBuffer = commandBuffers[index];
+    index++; index%=commandBuffers.size();
+    return commandBuffer;
 }

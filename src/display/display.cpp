@@ -106,7 +106,7 @@ bool Display::shouldClose() const
 void Display::drawFrame()
 {
     // Get next command buffer and wait till ready
-    CommandBuffer commandBuffer = commandPool->nextBuffer();
+    CommandBuffer &commandBuffer = commandPool->nextBuffer();
     commandBuffer.waitForReady(device);
 
     // Acquire valid image from swapchain

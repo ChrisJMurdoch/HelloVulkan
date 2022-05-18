@@ -7,7 +7,7 @@ int main()
 {
     try
     {
-        Display display{1000, 600, "HelloVulkan", BufferingStrategy::SingleBuffering, true};
+        Display display{1000, 600, "HelloVulkan", BufferingStrategy::TripleBuffering, true};
         while (!display.shouldClose())
             display.tick();
     }
