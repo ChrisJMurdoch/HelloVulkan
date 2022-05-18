@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "memory/typedBuffer.hpp"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -12,7 +14,6 @@ class PhysicalDevice;
 class Device;
 class Swapchain;
 class CommandPool;
-class VertexBuffer;
 
 enum BufferingStrategy
 {
@@ -32,7 +33,7 @@ private:
     Device *device;
     Swapchain *swapchain;
     CommandPool *commandPool;
-    VertexBuffer *vertexBuffer;
+    TypedBuffer<Vertex> *vertexBuffer;
 
     bool framebufferResized = false;
 

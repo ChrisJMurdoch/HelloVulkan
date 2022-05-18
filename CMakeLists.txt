@@ -45,8 +45,7 @@ target_sources(${APP_NAME}
         src/configuration/window.cpp
         src/core/main.cpp
         src/display/display.cpp
-        src/memory/buffer.cpp
-        src/memory/vertexBuffer.cpp
+        src/memory/voidBuffer.cpp
         src/swapchain/image.cpp
         src/swapchain/swapchain.cpp
         src/utility/io.cpp

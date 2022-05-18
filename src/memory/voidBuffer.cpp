@@ -1,8 +1,7 @@
 
-#include "memory/buffer.hpp"
+#include "memory/voidBuffer.hpp"
 
 #include "configuration/physicalDevice.hpp"
-#include "vertex/vertex.hpp"
 #include "utility/check.hpp"
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice const *physicalDevice)
@@ -17,11 +16,11 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, P
     throw std::exception("Failed to find suitable memory type.");
 }
 
-Buffer::Buffer
+VoidBuffer::VoidBuffer
 (
     Device const *device, PhysicalDevice const *physicalDevice, VkDeviceSize const &size,
     VkBufferUsageFlags const &usage, VkMemoryPropertyFlags const &properties
-) : device(device)
+) : device(device), size(size)
 {
     // Create buffer
     VkBufferCreateInfo bufferInfo
@@ -50,18 +49,31 @@ Buffer::Buffer
     vkBindBufferMemory(device->getHandle(), handle, memory, 0);
 }
 
-Buffer::~Buffer()
+VoidBuffer::~VoidBuffer()
 {
     vkDestroyBuffer(device->getHandle(), handle, nullptr);
     vkFreeMemory(device->getHandle(), memory, nullptr);
 }
 
-VkBuffer const &Buffer::getHandle() const
+VkBuffer const &VoidBuffer::getHandle() const
 {
     return handle;
 }
 
-uint32_t Buffer::getOffset() const
+uint32_t VoidBuffer::getOffset() const
 {
     return 0; // Change later if necessary
+}
+
+void VoidBuffer::memcpy(size_t sourceDataSize, void const *sourceData)
+{
+    // Map device memory
+    void *deviceData;
+    vkMapMemory(device->getHandle(), memory, 0, sourceDataSize, 0, &deviceData);
+
+    // Copy data
+    std::memcpy(deviceData, sourceData, sourceDataSize);
+
+    // Unmap device memory
+    vkUnmapMemory(device->getHandle(), memory);
 }

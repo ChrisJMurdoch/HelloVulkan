@@ -15,7 +15,8 @@
 #include "configuration/renderPass.hpp"
 #include "command/drawCommandBuffer.hpp"
 #include "vertex/vertex.hpp"
-#include "memory/vertexBuffer.hpp"
+#include "memory/typedBuffer.hpp"
+#include "utility/util.hpp"
 
 #include <chrono>
 
@@ -39,14 +40,17 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     swapchain = new Swapchain(device, physicalDevice, window, surface);
     commandPool = new CommandPool(device, physicalDevice->getMainQueueFamilyIndex(), bufferingStrategy);
 
-    // Create vertex buffer
+    // Create vertices
     std::vector<Vertex> const vertices
     {
         { {0.0f, -0.5f}, {1.0f, 1.0f, 1.0f} },
         { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
         { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
     };
-    vertexBuffer = new VertexBuffer(device, physicalDevice, vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    int verticesSize = util::vecsizeof(vertices);
+
+    // Create vertex buffer
+    vertexBuffer = new TypedBuffer<Vertex>(device, physicalDevice, verticesSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     vertexBuffer->memcpy(vertices);
 }
 
@@ -127,7 +131,7 @@ void Display::drawFrame()
             vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
 
             // Draw triangles
-            vkCmdDraw(commandBuffer, vertexBuffer->getNVertices(), 1, 0, 0);
+            vkCmdDraw(commandBuffer, vertexBuffer->getNElements(), 1, 0, 0);
         });
     });
 
