@@ -46,7 +46,8 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
         { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
         { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
     };
-    vertexBuffer = new VertexBuffer(device, vertices, physicalDevice);
+    vertexBuffer = new VertexBuffer(device, physicalDevice, vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vertexBuffer->memcpy(vertices);
 }
 
 void Display::framebufferResizeCallback(GLFWwindow *window, int width, int height)

@@ -8,8 +8,8 @@
 #include <vector>
 
 class Device;
-class Vertex;
 class PhysicalDevice;
+class Vertex;
 
 class VertexBuffer : public Buffer
 {
@@ -17,7 +17,6 @@ private:
     int const nVertices;
 
 public:
-    VertexBuffer(Device const *device, std::vector<Vertex> const &vertices, PhysicalDevice const *physicalDevice);
+    VertexBuffer(Device const *device, PhysicalDevice const *physicalDevice, std::vector<Vertex> const &vertices, VkBufferUsageFlags const &usage, VkMemoryPropertyFlags const &properties);
     int getNVertices() const;
-    uint32_t getOffset() const;
 };

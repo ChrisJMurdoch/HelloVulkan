@@ -4,20 +4,14 @@
 #include "vertex/vertex.hpp"
 #include "utility/check.hpp"
 
-VertexBuffer::VertexBuffer(Device const *device, std::vector<Vertex> const &vertices, PhysicalDevice const *physicalDevice)
+VertexBuffer::VertexBuffer(Device const *device, PhysicalDevice const *physicalDevice, std::vector<Vertex> const &vertices, VkBufferUsageFlags const &usage, VkMemoryPropertyFlags const &properties)
     : Buffer(
-        device, vertices.data(), physicalDevice,
-        sizeof(vertices[0])*vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        device, physicalDevice, sizeof(vertices[0])*vertices.size(),
+        usage, properties
     ), nVertices(vertices.size())
-{
-}
+{ }
 
 int VertexBuffer::getNVertices() const
 {
     return nVertices;
-}
-
-uint32_t VertexBuffer::getOffset() const
-{
-    return 0; // Change later if necessary
 }

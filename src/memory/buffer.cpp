@@ -1,9 +1,8 @@
 
 #include "memory/buffer.hpp"
 
-#include "configuration/device.hpp"
-#include "vertex/vertex.hpp"
 #include "configuration/physicalDevice.hpp"
+#include "vertex/vertex.hpp"
 #include "utility/check.hpp"
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice const *physicalDevice)
@@ -20,8 +19,8 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, P
 
 Buffer::Buffer
 (
-    Device const *device, void const *sourceData, PhysicalDevice const *physicalDevice,
-    VkDeviceSize const &size, VkBufferUsageFlags const &usage, VkMemoryPropertyFlags const &properties
+    Device const *device, PhysicalDevice const *physicalDevice, VkDeviceSize const &size,
+    VkBufferUsageFlags const &usage, VkMemoryPropertyFlags const &properties
 ) : device(device)
 {
     // Create buffer
@@ -49,12 +48,6 @@ Buffer::Buffer
 
     // Bind memory to buffer
     vkBindBufferMemory(device->getHandle(), handle, memory, 0);
-
-    // Copy memory over
-    void *data;
-    vkMapMemory(device->getHandle(), memory, 0, bufferInfo.size, 0, &data);
-    memcpy(data, sourceData, static_cast<size_t>(bufferInfo.size));
-    vkUnmapMemory(device->getHandle(), memory);
 }
 
 Buffer::~Buffer()
@@ -66,4 +59,9 @@ Buffer::~Buffer()
 VkBuffer const &Buffer::getHandle() const
 {
     return handle;
+}
+
+uint32_t Buffer::getOffset() const
+{
+    return 0; // Change later if necessary
 }
