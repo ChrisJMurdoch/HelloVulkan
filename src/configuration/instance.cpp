@@ -1,5 +1,5 @@
 
-#include "display/instance.hpp"
+#include "configuration/instance.hpp"
 
 #include "utility/check.hpp"
 

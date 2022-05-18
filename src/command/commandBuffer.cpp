@@ -1,7 +1,7 @@
 
-#include "display/commandBuffer.hpp"
+#include "command/commandBuffer.hpp"
 
-#include "display/device.hpp"
+#include "configuration/device.hpp"
 #include "utility/check.hpp"
 
 CommandBuffer::CommandBuffer(VkCommandBuffer const &handle, VkSemaphore const &imageAvailableSemaphore, VkSemaphore const &renderFinishedSemaphore, VkFence const &inFlightFence)

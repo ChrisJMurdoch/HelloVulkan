@@ -1,7 +1,7 @@
 
-#include "display/vertexBuffer.hpp"
+#include "memory/vertexBuffer.hpp"
 
-#include "display/vertex.hpp"
+#include "vertex/vertex.hpp"
 #include "utility/check.hpp"
 
 VertexBuffer::VertexBuffer(Device const *device, std::vector<Vertex> const &vertices, PhysicalDevice const *physicalDevice)

@@ -1,7 +1,7 @@
 
-#include "display/debugMessenger.hpp"
+#include "configuration/debugMessenger.hpp"
 
-#include "display/instance.hpp"
+#include "configuration/instance.hpp"
 #include "utility/check.hpp"
 
 DebugMessenger::DebugMessenger(Instance const *instance) : instance(instance)

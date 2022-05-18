@@ -1,10 +1,10 @@
 
-#include "display/pipeline.hpp"
+#include "configuration/pipeline.hpp"
 
-#include "display/device.hpp"
-#include "display/shaderModule.hpp"
-#include "display/renderPass.hpp"
-#include "display/vertex.hpp"
+#include "configuration/device.hpp"
+#include "configuration/shaderModule.hpp"
+#include "configuration/renderPass.hpp"
+#include "vertex/vertex.hpp"
 #include "utility/check.hpp"
 
 #include <vector>

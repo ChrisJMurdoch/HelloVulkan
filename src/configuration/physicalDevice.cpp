@@ -1,8 +1,8 @@
 
-#include "display/physicalDevice.hpp"
+#include "configuration/physicalDevice.hpp"
 
-#include "display/instance.hpp"
-#include "display/surface.hpp"
+#include "configuration/instance.hpp"
+#include "configuration/surface.hpp"
 #include "utility/check.hpp"
 
 #include <iostream>

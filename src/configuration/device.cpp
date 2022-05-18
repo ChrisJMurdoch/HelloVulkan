@@ -1,8 +1,8 @@
 
-#include "display/device.hpp"
+#include "configuration/device.hpp"
 
-#include "display/physicalDevice.hpp"
-#include "display/queue.hpp"
+#include "configuration/physicalDevice.hpp"
+#include "configuration/queue.hpp"
 #include "utility/check.hpp"
 
 Device::Device(PhysicalDevice const *physicalDevice, std::vector<const char*> const &validationLayers, std::vector<const char*> const &extensions)

@@ -1,9 +1,9 @@
 
-#include "display/buffer.hpp"
+#include "memory/buffer.hpp"
 
-#include "display/device.hpp"
-#include "display/vertex.hpp"
-#include "display/physicalDevice.hpp"
+#include "configuration/device.hpp"
+#include "vertex/vertex.hpp"
+#include "configuration/physicalDevice.hpp"
 #include "utility/check.hpp"
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice const *physicalDevice)

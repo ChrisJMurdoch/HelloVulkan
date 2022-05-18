@@ -30,28 +30,26 @@ add_executable(${APP_NAME})
 # Add sources
 target_sources(${APP_NAME}
     PRIVATE
+        src/command/commandBuffer.cpp
+        src/command/commandPool.cpp
+        src/configuration/debugMessenger.cpp
+        src/configuration/device.cpp
+        src/configuration/instance.cpp
+        src/configuration/physicalDevice.cpp
+        src/configuration/pipeline.cpp
+        src/configuration/queue.cpp
+        src/configuration/renderPass.cpp
+        src/configuration/shaderModule.cpp
+        src/configuration/surface.cpp
+        src/configuration/window.cpp
         src/core/main.cpp
-        
-        src/utility/io.cpp
-
         src/display/display.cpp
-        src/display/renderPass.cpp
-        src/display/shaderModule.cpp
-        src/display/pipeline.cpp
-        src/display/commandPool.cpp
-        src/display/instance.cpp
-        src/display/debugMessenger.cpp
-        src/display/physicalDevice.cpp
-        src/display/device.cpp
-        src/display/window.cpp
-        src/display/surface.cpp
-        src/display/swapchain.cpp
-        src/display/queue.cpp
-        src/display/image.cpp
-        src/display/commandBuffer.cpp
-        src/display/vertex.cpp
-        src/display/vertexBuffer.cpp
-        src/display/buffer.cpp
+        src/memory/buffer.cpp
+        src/memory/vertexBuffer.cpp
+        src/swapchain/image.cpp
+        src/swapchain/swapchain.cpp
+        src/utility/io.cpp
+        src/vertex/vertex.cpp
 )
 
 # Add includes

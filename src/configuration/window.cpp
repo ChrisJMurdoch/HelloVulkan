@@ -1,5 +1,5 @@
 
-#include "display/window.hpp"
+#include "configuration/window.hpp"
 
 Window::Window(int width, int height, char const *title, GLFWframebuffersizefun callback, void *userPointer)
 {

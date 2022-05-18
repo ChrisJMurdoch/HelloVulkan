@@ -1,8 +1,8 @@
 
-#include "display/commandPool.hpp"
+#include "command/commandPool.hpp"
 
-#include "display/device.hpp"
-#include "display/commandBuffer.hpp"
+#include "configuration/device.hpp"
+#include "command/commandBuffer.hpp"
 #include "utility/check.hpp"
 
 CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyIndex, int maxFramesInFlight) : device(device)

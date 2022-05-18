@@ -1,9 +1,9 @@
 
-#include "display/renderPass.hpp"
+#include "configuration/renderPass.hpp"
 
-#include "display/device.hpp"
-#include "display/swapchain.hpp"
-#include "display/image.hpp"
+#include "configuration/device.hpp"
+#include "swapchain/swapchain.hpp"
+#include "swapchain/image.hpp"
 #include "utility/check.hpp"
 
 #include <exception>

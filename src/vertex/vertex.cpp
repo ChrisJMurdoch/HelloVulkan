@@ -1,5 +1,5 @@
 
-#include "display/vertex.hpp"
+#include "vertex/vertex.hpp"
 
 VkVertexInputBindingDescription Vertex::getBindingDescription()
 {

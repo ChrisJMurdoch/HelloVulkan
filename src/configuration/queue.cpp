@@ -1,11 +1,11 @@
 
-#include "display/queue.hpp"
+#include "configuration/queue.hpp"
 
-#include "display/device.hpp"
-#include "display/swapchain.hpp"
-#include "display/commandPool.hpp"
-#include "display/image.hpp"
-#include "display/commandBuffer.hpp"
+#include "configuration/device.hpp"
+#include "swapchain/swapchain.hpp"
+#include "command/commandPool.hpp"
+#include "swapchain/image.hpp"
+#include "command/commandBuffer.hpp"
 #include "utility/check.hpp"
 
 #include <vector>

@@ -1,7 +1,7 @@
 
-#include "display/shaderModule.hpp"
+#include "configuration/shaderModule.hpp"
 
-#include "display/device.hpp"
+#include "configuration/device.hpp"
 #include "utility/check.hpp"
 
 ShaderModule::ShaderModule(Device const *device, std::vector<char> const &code) : device(device)

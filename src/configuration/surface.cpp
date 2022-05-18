@@ -1,9 +1,9 @@
 
-#include "display/surface.hpp"
+#include "configuration/surface.hpp"
 
-#include "display/instance.hpp"
-#include "display/window.hpp"
-#include "display/physicalDevice.hpp"
+#include "configuration/instance.hpp"
+#include "configuration/window.hpp"
+#include "configuration/physicalDevice.hpp"
 #include "utility/check.hpp"
 
 Surface::Surface(Instance const *instance, Window const *window) : instance(instance)
