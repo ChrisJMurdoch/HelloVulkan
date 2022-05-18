@@ -33,7 +33,9 @@ private:
     Device *device;
     Swapchain *swapchain;
     CommandPool *commandPool;
+    
     TypedBuffer<Vertex> *vertexBuffer;
+    TypedBuffer<uint16_t> *indexBuffer;
 
     bool framebufferResized = false;
 

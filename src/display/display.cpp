@@ -41,20 +41,36 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     commandPool = new CommandPool(device, physicalDevice->getMainQueueFamilyIndex(), bufferingStrategy);
 
     // Create vertices
-    std::vector<Vertex> const vertices
+    const std::vector<Vertex> vertices
     {
-        { {0.0f, -0.5f}, {1.0f, 1.0f, 1.0f} },
-        { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
-        { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
     };
 
     // Create staging buffer and copy over data
-    TypedBuffer<Vertex> stagingBuffer(device, physicalDevice, util::vecsizeof(vertices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    stagingBuffer.memcpy(vertices);
+    TypedBuffer<Vertex> vertexStagingBuffer(device, physicalDevice, util::vecsizeof(vertices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vertexStagingBuffer.memcpy(vertices);
 
     // Create vertex buffer and transfer data
     vertexBuffer = new TypedBuffer<Vertex>(device, physicalDevice, util::vecsizeof(vertices), VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    vertexBuffer->transfer(commandPool, device->getMainQueue(), stagingBuffer);
+    vertexBuffer->transfer(commandPool, device->getMainQueue(), vertexStagingBuffer);
+
+    // Create indices
+    const std::vector<uint16_t> indices
+    {
+        0, 1, 2,
+        2, 3, 0
+    };
+    
+    // Create staging buffer and copy over data
+    TypedBuffer<uint16_t> indexStagingBuffer(device, physicalDevice, util::vecsizeof(indices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    indexStagingBuffer.memcpy(indices);
+
+    // Create index buffer and transfer data
+    indexBuffer = new TypedBuffer<uint16_t>(device, physicalDevice, util::vecsizeof(indices), VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    indexBuffer->transfer(commandPool, device->getMainQueue(), indexStagingBuffer);
 }
 
 void Display::framebufferResizeCallback(GLFWwindow *window, int width, int height)
@@ -68,7 +84,8 @@ Display::~Display()
     // Wait until idle
     vkDeviceWaitIdle(device->getHandle());
 
-    // Destroy vertex buffer
+    // Destroy buffer
+    delete indexBuffer;
     delete vertexBuffer;
 
     // Destroy Vulkan objects
@@ -130,11 +147,14 @@ void Display::drawFrame()
 
             // Bind vertex buffers
             std::vector<VkBuffer> vertexBuffers { vertexBuffer->getHandle() };
-            std::vector<VkDeviceSize> offsets   { vertexBuffer->getOffset() };
-            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
+            std::vector<VkDeviceSize> vertexOffsets   { vertexBuffer->getOffset() };
+            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), vertexOffsets.data());
+
+            // Bind index buffer
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT16);
 
             // Draw triangles
-            vkCmdDraw(commandBuffer, vertexBuffer->getNElements(), 1, 0, 0);
+            vkCmdDrawIndexed(commandBuffer, indexBuffer->getNElements(), 1, 0, 0, 0);
         });
     });
 
