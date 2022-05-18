@@ -2,7 +2,7 @@
 #include "command/commandPool.hpp"
 
 #include "configuration/device.hpp"
-#include "command/commandBuffer.hpp"
+#include "command/drawCommandBuffer.hpp"
 #include "utility/check.hpp"
 
 CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyIndex, int maxFramesInFlight) : device(device)
@@ -17,25 +17,25 @@ CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyInd
     check::fail( vkCreateCommandPool(device->getHandle(), &poolInfo, nullptr, &handle), "vkCreateCommandPool failed." );
 
     // Allocate command buffers
-    commandBufferHandles.resize(maxFramesInFlight);
+    drawCommandBufferHandles.resize(maxFramesInFlight);
     VkCommandBufferAllocateInfo allocInfo
     {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = handle,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = (uint32_t) commandBufferHandles.size()
+        .commandBufferCount = (uint32_t) drawCommandBufferHandles.size()
     };
-    check::fail( vkAllocateCommandBuffers(device->getHandle(), &allocInfo, commandBufferHandles.data()), "vkAllocateCommandBuffers failed." );
+    check::fail( vkAllocateCommandBuffers(device->getHandle(), &allocInfo, drawCommandBufferHandles.data()), "vkAllocateCommandBuffers failed." );
 
     // Create synchronised command buffer objects
-    commandBuffers.reserve(commandBufferHandles.size());
-    for (VkCommandBuffer const &commandBufferHandle : commandBufferHandles)
-        commandBuffers.push_back(CommandBuffer(device, commandBufferHandle));
+    drawCommandBuffers.reserve(drawCommandBufferHandles.size());
+    for (VkCommandBuffer const &commandBufferHandle : drawCommandBufferHandles)
+        drawCommandBuffers.push_back(DrawCommandBuffer(commandBufferHandle, device));
 }
 
 CommandPool::~CommandPool()
 {
-    commandBuffers.clear();
+    drawCommandBuffers.clear();
     vkDestroyCommandPool(device->getHandle(), handle, nullptr);
 }
 
@@ -44,10 +44,10 @@ VkCommandPool const &CommandPool::getHandle() const
     return handle;
 }
 
-CommandBuffer &CommandPool::nextBuffer()
+DrawCommandBuffer &CommandPool::nextBuffer()
 {
     static int index = 0;
-    CommandBuffer &commandBuffer = commandBuffers[index];
-    index++; index%=commandBuffers.size();
+    DrawCommandBuffer &commandBuffer = drawCommandBuffers[index];
+    index++; index%=drawCommandBuffers.size();
     return commandBuffer;
 }

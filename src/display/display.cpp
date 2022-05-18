@@ -13,7 +13,7 @@
 #include "configuration/queue.hpp"
 #include "configuration/pipeline.hpp"
 #include "configuration/renderPass.hpp"
-#include "command/commandBuffer.hpp"
+#include "command/drawCommandBuffer.hpp"
 #include "vertex/vertex.hpp"
 #include "memory/vertexBuffer.hpp"
 
@@ -106,7 +106,7 @@ bool Display::shouldClose() const
 void Display::drawFrame()
 {
     // Get next command buffer and wait till ready
-    CommandBuffer &commandBuffer = commandPool->nextBuffer();
+    DrawCommandBuffer &commandBuffer = commandPool->nextBuffer();
     commandBuffer.waitForReady(device);
 
     // Acquire valid image from swapchain

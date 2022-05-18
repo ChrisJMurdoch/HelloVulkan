@@ -9,7 +9,7 @@
 #include "configuration/pipeline.hpp"
 #include "swapchain/image.hpp"
 #include "command/commandPool.hpp"
-#include "command/commandBuffer.hpp"
+#include "command/drawCommandBuffer.hpp"
 #include "configuration/shaderModule.hpp"
 #include "utility/check.hpp"
 #include "utility/io.hpp"
@@ -90,7 +90,7 @@ Pipeline const *Swapchain::getPipeline() const
     return pipeline;
 }
 
-Image const Swapchain::acquireNextImage(CommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
+Image const Swapchain::acquireNextImage(DrawCommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
 {
     uint32_t imageIndex;
     while (

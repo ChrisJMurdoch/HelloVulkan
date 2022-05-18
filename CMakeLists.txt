@@ -32,6 +32,7 @@ target_sources(${APP_NAME}
     PRIVATE
         src/command/commandBuffer.cpp
         src/command/commandPool.cpp
+        src/command/drawCommandBuffer.cpp
         src/configuration/debugMessenger.cpp
         src/configuration/device.cpp
         src/configuration/instance.cpp

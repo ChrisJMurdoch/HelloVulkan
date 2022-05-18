@@ -5,7 +5,7 @@
 #include "swapchain/swapchain.hpp"
 #include "command/commandPool.hpp"
 #include "swapchain/image.hpp"
-#include "command/commandBuffer.hpp"
+#include "command/drawCommandBuffer.hpp"
 #include "utility/check.hpp"
 
 #include <vector>
@@ -18,7 +18,7 @@ VkQueue const &Queue::getHandle() const
     return handle;
 }
 
-void Queue::submit(Device const *device, CommandBuffer const &commandBuffer)
+void Queue::submit(Device const *device, DrawCommandBuffer const &commandBuffer)
 {
     std::vector<VkSemaphore> waitSemaphores = {commandBuffer.getImageAvailableSemaphore()};
     std::vector<VkPipelineStageFlags> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -38,7 +38,7 @@ void Queue::submit(Device const *device, CommandBuffer const &commandBuffer)
     check::fail( vkQueueSubmit(handle, 1, &submitInfo, commandBuffer.getInFlightFence()), "vkQueueSubmit failed." );
 }
 
-void Queue::present(Swapchain const *swapchain, CommandBuffer const &commandBuffer, Image const &image)
+void Queue::present(Swapchain const *swapchain, DrawCommandBuffer const &commandBuffer, Image const &image)
 {
     std::vector<VkSwapchainKHR> swapchains = {swapchain->getHandle()};
     std::vector<VkSemaphore> waitSemaphores = {commandBuffer.getRenderFinishedSemaphore()};
