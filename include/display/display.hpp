@@ -12,6 +12,7 @@ class DebugMessenger;
 class Surface;
 class PhysicalDevice;
 class Device;
+class DescriptorSetLayout;
 class Swapchain;
 class CommandPool;
 class FramePool;
@@ -32,6 +33,7 @@ private:
     Surface *surface;
     PhysicalDevice *physicalDevice;
     Device *device;
+    DescriptorSetLayout *descriptorSetLayout;
     Swapchain *swapchain;
     CommandPool *commandPool;
     FramePool *framePool;

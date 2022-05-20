@@ -5,11 +5,12 @@
 #include "configuration/shaderModule.hpp"
 #include "configuration/renderPass.hpp"
 #include "vertex/vertex.hpp"
+#include "memory/descriptorSetLayout.hpp"
 #include "utility/check.hpp"
 
 #include <vector>
 
-Pipeline::Pipeline(Device const *device, ShaderModule const &vertShaderModule, ShaderModule const &fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent) : device(device)
+Pipeline::Pipeline(Device const *device, ShaderModule const &vertShaderModule, ShaderModule const &fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent, DescriptorSetLayout const *descriptorSetLayout) : device(device)
 {
     // Specify shader stages
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages
@@ -115,8 +116,8 @@ Pipeline::Pipeline(Device const *device, ShaderModule const &vertShaderModule, S
     VkPipelineLayoutCreateInfo pipelineLayoutInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 0,
-        .pushConstantRangeCount = 0
+        .setLayoutCount = 1,
+        .pSetLayouts = &descriptorSetLayout->getHandle()
     };
     check::fail( vkCreatePipelineLayout(device->getHandle(), &pipelineLayoutInfo, nullptr, &pipelineLayout),  "vkCreatePipelineLayout failed.");
 

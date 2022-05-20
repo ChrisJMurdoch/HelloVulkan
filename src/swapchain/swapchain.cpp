@@ -16,9 +16,9 @@
 
 #include <iostream>
 
-Swapchain::Swapchain(Device const *device, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface) : device(device)
+Swapchain::Swapchain(Device const *device, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout) : device(device)
 {
-    create(physicalDevice, window, surface);
+    create(physicalDevice, window, surface, descriptorSetLayout);
 }
 
 Swapchain::~Swapchain()
@@ -26,7 +26,7 @@ Swapchain::~Swapchain()
     destroy();
 }
 
-void Swapchain::create(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
+void Swapchain::create(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout)
 {
     createSwapchain(physicalDevice, surface, window);
     createImageViews();
@@ -35,7 +35,7 @@ void Swapchain::create(PhysicalDevice const *physicalDevice, Window const *windo
         device,
         ShaderModule(device, io::readFile("shaders/bin/shader.vert.spv", std::ios::binary)),
         ShaderModule(device, io::readFile("shaders/bin/shader.frag.spv", std::ios::binary)),
-        renderPass, extent
+        renderPass, extent, descriptorSetLayout
     );
     createFramebuffers();
 }
@@ -51,7 +51,7 @@ void Swapchain::destroy()
     vkDestroySwapchainKHR(device->getHandle(), handle, nullptr);
 }
 
-void Swapchain::recreate(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
+void Swapchain::recreate(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout)
 {
     // Get dimensions and block until window is visible
     int width=0, height=0;
@@ -67,7 +67,7 @@ void Swapchain::recreate(PhysicalDevice const *physicalDevice, Window const *win
 
     // Recreate
     destroy();
-    create(physicalDevice, window, surface);
+    create(physicalDevice, window, surface, descriptorSetLayout);
 }
 
 VkSwapchainKHR const &Swapchain::getHandle() const
@@ -90,7 +90,7 @@ Pipeline const *Swapchain::getPipeline() const
     return pipeline;
 }
 
-Image const Swapchain::acquireNextImage(Frame const &frame, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface)
+Image const Swapchain::acquireNextImage(Frame const &frame, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout)
 {
     uint32_t imageIndex;
     while (
@@ -98,7 +98,7 @@ Image const Swapchain::acquireNextImage(Frame const &frame, bool &framebufferRes
         vkAcquireNextImageKHR(device->getHandle(), handle, UINT64_MAX, frame.getImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS
     )
     {
-        recreate(physicalDevice, window, surface);
+        recreate(physicalDevice, window, surface, descriptorSetLayout);
         framebufferResized = false;
     }
     return Image(images[imageIndex], imageViews[imageIndex], framebuffers[imageIndex], imageIndex);

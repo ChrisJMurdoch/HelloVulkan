@@ -48,6 +48,7 @@ target_sources(${APP_NAME}
         src/frame/framePool.cpp
         src/memory/descriptorPool.cpp
         src/memory/descriptorSet.cpp
+        src/memory/descriptorSetLayout.cpp
         src/memory/voidBuffer.cpp
         src/swapchain/image.cpp
         src/swapchain/swapchain.cpp

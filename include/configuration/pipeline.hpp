@@ -6,6 +6,7 @@
 class Device;
 class ShaderModule;
 class RenderPass;
+class DescriptorSetLayout;
 
 class Pipeline
 {
@@ -15,7 +16,7 @@ private:
     VkPipelineLayout pipelineLayout;
 
 public:
-    Pipeline(Device const *device, ShaderModule const &vertShaderModule, ShaderModule const &fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent);
+    Pipeline(Device const *device, ShaderModule const &vertShaderModule, ShaderModule const &fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent, DescriptorSetLayout const *descriptorSetLayout);
     ~Pipeline();
     VkPipeline const &getHandle() const;
 };

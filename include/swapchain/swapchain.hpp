@@ -14,6 +14,7 @@ class RenderPass;
 class Pipeline;
 class Image;
 class Frame;
+class DescriptorSetLayout;
 
 class Swapchain
 {
@@ -32,18 +33,18 @@ private:
     std::vector<VkFramebuffer> framebuffers;
 
 public:
-    Swapchain(Device const *device, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);
+    Swapchain(Device const *device, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout);
     ~Swapchain();
     VkSwapchainKHR const &getHandle() const;
     VkExtent2D const &getExtent() const;
     RenderPass *getRenderPass();
     Pipeline const *getPipeline() const;
-    Image const acquireNextImage(Frame const &frame, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);
+    Image const acquireNextImage(Frame const &frame, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout);
 
 private:
-    void create(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);
+    void create(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout);
     void destroy();
-    void recreate(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);
+    void recreate(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface, DescriptorSetLayout const *descriptorSetLayout);
 
     // Creation stages
     void createSwapchain(PhysicalDevice const *physicalDevice, Surface const *surface, Window const *window);

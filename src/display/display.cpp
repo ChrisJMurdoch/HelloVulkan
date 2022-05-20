@@ -17,6 +17,7 @@
 #include "memory/typedBuffer.hpp"
 #include "frame/framePool.hpp"
 #include "frame/frame.hpp"
+#include "memory/descriptorSetLayout.hpp"
 #include "utility/util.hpp"
 
 #define GLM_FORCE_RADIANS
@@ -42,7 +43,8 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     surface = new Surface(instance, window);
     physicalDevice = new PhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
     device = new Device(physicalDevice, activeValidationLayers, DEVICE_EXTENSIONS);
-    swapchain = new Swapchain(device, physicalDevice, window, surface);
+    descriptorSetLayout = new DescriptorSetLayout(device);
+    swapchain = new Swapchain(device, physicalDevice, window, surface, descriptorSetLayout);
     commandPool = new CommandPool(device, physicalDevice->getMainQueueFamilyIndex(), bufferingStrategy);
     framePool = new FramePool(device, commandPool, physicalDevice, bufferingStrategy);
 
@@ -98,6 +100,7 @@ Display::~Display()
     delete framePool;
     delete commandPool;
     delete swapchain;
+    delete descriptorSetLayout;
     delete device;
     delete physicalDevice;
     delete surface;
@@ -155,7 +158,7 @@ void Display::drawFrame()
     frame.updateUniform(uniform);
 
     // Acquire valid image from swapchain
-    Image image = swapchain->acquireNextImage(frame, framebufferResized, physicalDevice, window, surface);
+    Image image = swapchain->acquireNextImage(frame, framebufferResized, physicalDevice, window, surface, descriptorSetLayout);
 
     // Record commands into command buffer
     frame.getCommandBuffer().record([&](VkCommandBuffer const &commandBuffer)
