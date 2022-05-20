@@ -18,6 +18,9 @@ public:
         : VoidBuffer (device, physicalDevice, size, usage, properties)
     { }
 
+    TypedBuffer(TypedBuffer &&old) : VoidBuffer(std::move(old))
+    { }
+
     int getNElements() const
     {
         return size / sizeof(T);

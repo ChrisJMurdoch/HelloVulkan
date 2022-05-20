@@ -52,6 +52,12 @@ VoidBuffer::VoidBuffer
     vkBindBufferMemory(device->getHandle(), handle, memory, 0);
 }
 
+VoidBuffer::VoidBuffer(VoidBuffer &&old) : device(old.device), size(old.size), handle(old.handle), memory(old.memory)
+{
+    old.handle = VK_NULL_HANDLE;
+    old.memory = VK_NULL_HANDLE;
+}
+
 VoidBuffer::~VoidBuffer()
 {
     vkDestroyBuffer(device->getHandle(), handle, nullptr);

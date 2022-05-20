@@ -30,7 +30,9 @@ protected:
     );
 
 public:
+    VoidBuffer(VoidBuffer &&old);
     ~VoidBuffer();
+
     VkBuffer const &getHandle() const;
     uint32_t getOffset() const;
     void memcpy(size_t sourceDataSize, void const *sourceData);
