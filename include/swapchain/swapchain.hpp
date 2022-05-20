@@ -13,7 +13,7 @@ class Surface;
 class RenderPass;
 class Pipeline;
 class Image;
-class DrawCommandBuffer;
+class Frame;
 
 class Swapchain
 {
@@ -38,7 +38,7 @@ public:
     VkExtent2D const &getExtent() const;
     RenderPass *getRenderPass();
     Pipeline const *getPipeline() const;
-    Image const acquireNextImage(DrawCommandBuffer const &commandBuffer, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);
+    Image const acquireNextImage(Frame const &frame, bool &framebufferResized, PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);
 
 private:
     void create(PhysicalDevice const *physicalDevice, Window const *window, Surface const *surface);

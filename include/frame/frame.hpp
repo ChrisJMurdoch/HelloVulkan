@@ -6,22 +6,28 @@
 #include <vulkan/vulkan.h>
 
 class Device;
+class CommandPool;
 
-class DrawCommandBuffer : public CommandBuffer
+/** Stores all per-frame-in-flight data necessary */
+class Frame
 {
 private:
+    Device const *device;
+    CommandBuffer commandBuffer;
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderFinishedSemaphore;
     VkFence inFlightFence;
 
 public:
-    DrawCommandBuffer(Device const *device, CommandPool const *commandPool, VkCommandBuffer const &handle);
-    DrawCommandBuffer(DrawCommandBuffer &&old);
-    ~DrawCommandBuffer();
-
+    Frame(Device const *device, CommandPool *commandPool);
+    Frame(Frame &&old);
+    ~Frame();
+    
+    CommandBuffer const &getCommandBuffer() const;
+    CommandBuffer &getCommandBuffer();
     VkSemaphore const &getImageAvailableSemaphore() const;
     VkSemaphore const &getRenderFinishedSemaphore() const;
     VkFence const &getInFlightFence() const;
-
+    
     void waitForReady(Device const *device) const;
 };

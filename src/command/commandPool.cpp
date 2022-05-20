@@ -2,7 +2,7 @@
 #include "command/commandPool.hpp"
 
 #include "configuration/device.hpp"
-#include "command/drawCommandBuffer.hpp"
+#include "command/commandBuffer.hpp"
 #include "utility/check.hpp"
 
 CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyIndex, int maxFramesInFlight) : device(device)
@@ -26,30 +26,16 @@ CommandPool::CommandPool(Device const *device, uint32_t const mainQueueFamilyInd
         .commandBufferCount = (uint32_t) drawCommandBufferHandles.size()
     };
     check::fail( vkAllocateCommandBuffers(device->getHandle(), &allocInfo, drawCommandBufferHandles.data()), "vkAllocateCommandBuffers failed." );
-
-    // Create synchronised command buffer objects
-    drawCommandBuffers.reserve(drawCommandBufferHandles.size());
-    for (VkCommandBuffer const &commandBufferHandle : drawCommandBufferHandles)
-        drawCommandBuffers.push_back(DrawCommandBuffer(device, this, commandBufferHandle));
 }
 
 CommandPool::~CommandPool()
 {
-    drawCommandBuffers.clear();
     vkDestroyCommandPool(device->getHandle(), handle, nullptr);
 }
 
 VkCommandPool const &CommandPool::getHandle() const
 {
     return handle;
-}
-
-DrawCommandBuffer &CommandPool::nextBuffer()
-{
-    static int index = 0;
-    DrawCommandBuffer &commandBuffer = drawCommandBuffers[index];
-    index++; index%=drawCommandBuffers.size();
-    return commandBuffer;
 }
 
 CommandBuffer CommandPool::allocateNewBuffer()
@@ -66,5 +52,5 @@ CommandBuffer CommandPool::allocateNewBuffer()
     check::fail( vkAllocateCommandBuffers(device->getHandle(), &allocInfo, &commandBufferHandle), "vkAllocateCommandBuffers failed." );
 
     // Create synchronised command buffer objects
-    return DrawCommandBuffer(device, this, commandBufferHandle);
+    return CommandBuffer(device, this, commandBufferHandle);
 }

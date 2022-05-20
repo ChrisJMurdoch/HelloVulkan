@@ -14,6 +14,7 @@ class PhysicalDevice;
 class Device;
 class Swapchain;
 class CommandPool;
+class FramePool;
 
 enum BufferingStrategy
 {
@@ -33,6 +34,7 @@ private:
     Device *device;
     Swapchain *swapchain;
     CommandPool *commandPool;
+    FramePool *framePool;
     
     TypedBuffer<Vertex> *vertexBuffer;
     TypedBuffer<uint16_t> *indexBuffer;

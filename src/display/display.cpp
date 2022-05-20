@@ -13,9 +13,10 @@
 #include "configuration/queue.hpp"
 #include "configuration/pipeline.hpp"
 #include "configuration/renderPass.hpp"
-#include "command/drawCommandBuffer.hpp"
 #include "vertex/vertex.hpp"
 #include "memory/typedBuffer.hpp"
+#include "frame/framePool.hpp"
+#include "frame/frame.hpp"
 #include "utility/util.hpp"
 
 #include <chrono>
@@ -39,6 +40,7 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     device = new Device(physicalDevice, activeValidationLayers, DEVICE_EXTENSIONS);
     swapchain = new Swapchain(device, physicalDevice, window, surface);
     commandPool = new CommandPool(device, physicalDevice->getMainQueueFamilyIndex(), bufferingStrategy);
+    framePool = new FramePool(device, commandPool, bufferingStrategy);
 
     // Create vertices
     const std::vector<Vertex> vertices
@@ -89,6 +91,7 @@ Display::~Display()
     delete vertexBuffer;
 
     // Destroy Vulkan objects
+    delete framePool;
     delete commandPool;
     delete swapchain;
     delete device;
@@ -130,15 +133,15 @@ bool Display::shouldClose() const
 
 void Display::drawFrame()
 {
-    // Get next command buffer and wait till ready
-    DrawCommandBuffer &commandBuffer = commandPool->nextBuffer();
-    commandBuffer.waitForReady(device);
+    // Get next frame and wait till ready
+    Frame &frame = framePool->nextFrame();
+    frame.waitForReady(device);
 
     // Acquire valid image from swapchain
-    Image image = swapchain->acquireNextImage(commandBuffer, framebufferResized, physicalDevice, window, surface);
+    Image image = swapchain->acquireNextImage(frame, framebufferResized, physicalDevice, window, surface);
 
     // Record commands into command buffer
-    commandBuffer.record([&](VkCommandBuffer const &commandBuffer)
+    frame.getCommandBuffer().record([&](VkCommandBuffer const &commandBuffer)
     {
         swapchain->getRenderPass()->run(swapchain, image, commandBuffer, [&]()
         {
@@ -159,8 +162,8 @@ void Display::drawFrame()
     });
 
     // Submit command buffer to main queue
-    device->getMainQueue().drawSubmit(device, commandBuffer);
+    device->getMainQueue().drawSubmit(device, frame);
     
     // Present image
-    device->getMainQueue().present(swapchain, commandBuffer, image);
+    device->getMainQueue().present(swapchain, frame, image);
 }

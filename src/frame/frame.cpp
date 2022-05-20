@@ -1,10 +1,11 @@
 
-#include "command/drawCommandBuffer.hpp"
+#include "frame/frame.hpp"
 
 #include "configuration/device.hpp"
+#include "command/commandPool.hpp"
 #include "utility/check.hpp"
 
-DrawCommandBuffer::DrawCommandBuffer(Device const *device, CommandPool const *commandPool, VkCommandBuffer const &handle) : CommandBuffer(device, commandPool, handle)
+Frame::Frame(Device const *device, CommandPool *commandPool) : device(device), commandBuffer(commandPool->allocateNewBuffer())
 {
     // Create sync objects
     static VkSemaphoreCreateInfo semaphoreInfo
@@ -21,7 +22,7 @@ DrawCommandBuffer::DrawCommandBuffer(Device const *device, CommandPool const *co
     check::fail( vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &inFlightFence), "vkCreateFence failed." );
 }
 
-DrawCommandBuffer::DrawCommandBuffer(DrawCommandBuffer &&old) : CommandBuffer(std::move(old)),
+Frame::Frame(Frame &&old) : device(old.device), commandBuffer(std::move(old.commandBuffer)),
     imageAvailableSemaphore(old.imageAvailableSemaphore), renderFinishedSemaphore(old.renderFinishedSemaphore), inFlightFence(old.inFlightFence)
 {
     old.imageAvailableSemaphore = VK_NULL_HANDLE;
@@ -29,29 +30,39 @@ DrawCommandBuffer::DrawCommandBuffer(DrawCommandBuffer &&old) : CommandBuffer(st
     old.inFlightFence = VK_NULL_HANDLE;
 }
 
-DrawCommandBuffer::~DrawCommandBuffer()
+Frame::~Frame()
 {
     vkDestroySemaphore(device->getHandle(), renderFinishedSemaphore, nullptr);
     vkDestroySemaphore(device->getHandle(), imageAvailableSemaphore, nullptr);
     vkDestroyFence(device->getHandle(), inFlightFence, nullptr);
 }
 
-VkSemaphore const &DrawCommandBuffer::getImageAvailableSemaphore() const
+CommandBuffer const &Frame::getCommandBuffer() const
+{
+    return commandBuffer;
+}
+
+CommandBuffer &Frame::getCommandBuffer()
+{
+    return commandBuffer;
+}
+
+VkSemaphore const &Frame::getImageAvailableSemaphore() const
 {
     return imageAvailableSemaphore;
 }
 
-VkSemaphore const &DrawCommandBuffer::getRenderFinishedSemaphore() const
+VkSemaphore const &Frame::getRenderFinishedSemaphore() const
 {
     return renderFinishedSemaphore;
 }
 
-VkFence const &DrawCommandBuffer::getInFlightFence() const
+VkFence const &Frame::getInFlightFence() const
 {
     return inFlightFence;
 }
 
-void DrawCommandBuffer::waitForReady(Device const *device) const
+void Frame::waitForReady(Device const *device) const
 {
     vkWaitForFences(device->getHandle(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 }
