@@ -3,9 +3,13 @@
 
 #include "configuration/device.hpp"
 #include "command/commandPool.hpp"
+#include "configuration/physicalDevice.hpp"
 #include "utility/check.hpp"
 
-Frame::Frame(Device const *device, CommandPool *commandPool) : device(device), commandBuffer(commandPool->allocateNewBuffer())
+Frame::Frame(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice)
+  : device(device),
+    commandBuffer(commandPool->allocateNewBuffer()),
+    uniformObjectBuffer(device, physicalDevice, sizeof(UniformObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
 {
     // Create sync objects
     static VkSemaphoreCreateInfo semaphoreInfo
@@ -22,8 +26,13 @@ Frame::Frame(Device const *device, CommandPool *commandPool) : device(device), c
     check::fail( vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &inFlightFence), "vkCreateFence failed." );
 }
 
-Frame::Frame(Frame &&old) : device(old.device), commandBuffer(std::move(old.commandBuffer)),
-    imageAvailableSemaphore(old.imageAvailableSemaphore), renderFinishedSemaphore(old.renderFinishedSemaphore), inFlightFence(old.inFlightFence)
+Frame::Frame(Frame &&old)
+  : device(old.device),
+    commandBuffer(std::move(old.commandBuffer)),
+    imageAvailableSemaphore(old.imageAvailableSemaphore),
+    renderFinishedSemaphore(old.renderFinishedSemaphore),
+    inFlightFence(old.inFlightFence),
+    uniformObjectBuffer(std::move(old.uniformObjectBuffer))
 {
     old.imageAvailableSemaphore = VK_NULL_HANDLE;
     old.renderFinishedSemaphore = VK_NULL_HANDLE;
@@ -65,4 +74,10 @@ VkFence const &Frame::getInFlightFence() const
 void Frame::waitForReady(Device const *device) const
 {
     vkWaitForFences(device->getHandle(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+}
+
+void Frame::updateUniform(UniformObject const &uniform)
+{
+    std::vector<UniformObject> data { uniform };
+    uniformObjectBuffer.memcpy(data);
 }

@@ -2,13 +2,14 @@
 #include "frame/framePool.hpp"
 
 #include "configuration/device.hpp"
+#include "configuration/physicalDevice.hpp"
 #include "command/commandPool.hpp"
 
-FramePool::FramePool(Device const *device, CommandPool *commandPool, int nFrames)
+FramePool::FramePool(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice, int nFrames)
 {
     frames.reserve(nFrames);
     for (int i=0; i<nFrames; i++)
-        frames.push_back(Frame(device, commandPool));
+        frames.push_back(Frame(device, commandPool, physicalDevice));
 }
 
 Frame &FramePool::nextFrame()

@@ -19,6 +19,10 @@
 #include "frame/frame.hpp"
 #include "utility/util.hpp"
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <chrono>
 
 std::vector<const char *> const VALIDATION_LAYERS{ "VK_LAYER_KHRONOS_validation" };
@@ -40,7 +44,7 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     device = new Device(physicalDevice, activeValidationLayers, DEVICE_EXTENSIONS);
     swapchain = new Swapchain(device, physicalDevice, window, surface);
     commandPool = new CommandPool(device, physicalDevice->getMainQueueFamilyIndex(), bufferingStrategy);
-    framePool = new FramePool(device, commandPool, bufferingStrategy);
+    framePool = new FramePool(device, commandPool, physicalDevice, bufferingStrategy);
 
     // Create vertices
     const std::vector<Vertex> vertices
@@ -136,6 +140,19 @@ void Display::drawFrame()
     // Get next frame and wait till ready
     Frame &frame = framePool->nextFrame();
     frame.waitForReady(device);
+
+    // Update uniforms
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    UniformObject uniform
+    {
+        .model = glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        .view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        .proj = glm::perspective(glm::radians(45.0f), swapchain->getExtent().width / (float) swapchain->getExtent().height, 0.1f, 10.0f)
+    };
+    uniform.proj[1][1] *= -1;
+    frame.updateUniform(uniform);
 
     // Acquire valid image from swapchain
     Image image = swapchain->acquireNextImage(frame, framebufferResized, physicalDevice, window, surface);
