@@ -46,7 +46,7 @@ Display::Display(int windowWidth, int windowHeight, char const *title, Buffering
     descriptorSetLayout = new DescriptorSetLayout(device);
     swapchain = new Swapchain(device, physicalDevice, window, surface, descriptorSetLayout);
     commandPool = new CommandPool(device, physicalDevice->getMainQueueFamilyIndex(), bufferingStrategy);
-    framePool = new FramePool(device, commandPool, physicalDevice, bufferingStrategy);
+    framePool = new FramePool(device, commandPool, physicalDevice, bufferingStrategy, descriptorSetLayout);
 
     // Create vertices
     const std::vector<Vertex> vertices
@@ -175,6 +175,9 @@ void Display::drawFrame()
 
             // Bind index buffer
             vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT16);
+
+            // Bind uniform
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapchain->getPipeline()->getLayout(), 0, 1, &frame.getDescriptorSet().getHandle(), 0, nullptr);
 
             // Draw triangles
             vkCmdDrawIndexed(commandBuffer, indexBuffer->getNElements(), 1, 0, 0, 0);

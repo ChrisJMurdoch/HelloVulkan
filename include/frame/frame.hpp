@@ -10,6 +10,7 @@
 class Device;
 class CommandPool;
 class PhysicalDevice;
+class DescriptorSet;
 
 struct UniformObject
 {
@@ -28,9 +29,10 @@ private:
     VkSemaphore renderFinishedSemaphore;
     VkFence inFlightFence;
     TypedBuffer<UniformObject> uniformObjectBuffer;
+    DescriptorSet const &descriptorSet;
 
 public:
-    Frame(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice);
+    Frame(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice, DescriptorSet &descriptorSet);
     Frame(Frame &&old);
     ~Frame();
     
@@ -39,6 +41,7 @@ public:
     VkSemaphore const &getImageAvailableSemaphore() const;
     VkSemaphore const &getRenderFinishedSemaphore() const;
     VkFence const &getInFlightFence() const;
+    DescriptorSet const &getDescriptorSet() const;
 
     void waitForReady(Device const *device) const;
 

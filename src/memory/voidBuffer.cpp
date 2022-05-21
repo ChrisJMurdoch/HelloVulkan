@@ -74,6 +74,11 @@ uint32_t VoidBuffer::getOffset() const
     return 0; // Change later if necessary
 }
 
+VkDeviceSize VoidBuffer::getSize() const
+{
+    return size;
+}
+
 void VoidBuffer::memcpy(size_t sourceDataSize, void const *sourceData)
 {
     // Map device memory

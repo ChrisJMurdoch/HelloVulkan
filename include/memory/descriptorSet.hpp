@@ -3,13 +3,18 @@
 
 #include <vulkan/vulkan.h>
 
+class Device;
+class VoidBuffer;
+
 class DescriptorSet
 {
 private:
-    VkDescriptorSet const &handle;
+    VkDescriptorSet const handle;
 
 public:
-    DescriptorSet(VkDescriptorSet const &handle);
+    DescriptorSet(VkDescriptorSet const handle);
     
-    VkDescriptorSet const &getHandle();
+    VkDescriptorSet const &getHandle() const;
+
+    void bindToBuffer(Device const *device, VoidBuffer const &buffer);
 };

@@ -19,4 +19,5 @@ public:
     Pipeline(Device const *device, ShaderModule const &vertShaderModule, ShaderModule const &fragShaderModule, RenderPass const *renderPass, VkExtent2D const &viewportExtent, DescriptorSetLayout const *descriptorSetLayout);
     ~Pipeline();
     VkPipeline const &getHandle() const;
+    VkPipelineLayout const &getLayout() const;
 };

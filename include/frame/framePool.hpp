@@ -11,6 +11,7 @@
 class Device;
 class CommandPool;
 class PhysicalDevice;
+class DescriptorSetLayout;
 
 class FramePool
 {
@@ -19,6 +20,6 @@ private:
     DescriptorPool descriptorPool;
 
 public:
-    FramePool(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice, int nFrames);
+    FramePool(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice, int nFrames, DescriptorSetLayout const *descriptorSetLayout);
     Frame &nextFrame();
 };

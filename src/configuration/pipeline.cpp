@@ -83,7 +83,7 @@ Pipeline::Pipeline(Device const *device, ShaderModule const &vertShaderModule, S
         .rasterizerDiscardEnable = VK_FALSE,
         .polygonMode = VK_POLYGON_MODE_FILL,
         .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_CLOCKWISE,
+        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
         .depthBiasEnable = VK_FALSE,
         .lineWidth = 1.0f
     };
@@ -150,4 +150,9 @@ Pipeline::~Pipeline()
 VkPipeline const &Pipeline::getHandle() const
 {
     return handle;
+}
+
+VkPipelineLayout const &Pipeline::getLayout() const
+{
+    return pipelineLayout;
 }

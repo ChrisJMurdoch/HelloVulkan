@@ -4,13 +4,18 @@
 #include "configuration/device.hpp"
 #include "command/commandPool.hpp"
 #include "configuration/physicalDevice.hpp"
+#include "memory/descriptorSet.hpp"
 #include "utility/check.hpp"
 
-Frame::Frame(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice)
+Frame::Frame(Device const *device, CommandPool *commandPool, PhysicalDevice const *physicalDevice, DescriptorSet &descriptorSet)
   : device(device),
     commandBuffer(commandPool->allocateNewBuffer()),
-    uniformObjectBuffer(device, physicalDevice, sizeof(UniformObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+    uniformObjectBuffer(device, physicalDevice, sizeof(UniformObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
+    descriptorSet(descriptorSet)
 {
+    // Link descriptor set and buffer
+    descriptorSet.bindToBuffer(device, uniformObjectBuffer);
+
     // Create sync objects
     static VkSemaphoreCreateInfo semaphoreInfo
     {
@@ -32,7 +37,8 @@ Frame::Frame(Frame &&old)
     imageAvailableSemaphore(old.imageAvailableSemaphore),
     renderFinishedSemaphore(old.renderFinishedSemaphore),
     inFlightFence(old.inFlightFence),
-    uniformObjectBuffer(std::move(old.uniformObjectBuffer))
+    uniformObjectBuffer(std::move(old.uniformObjectBuffer)),
+    descriptorSet(old.descriptorSet)
 {
     old.imageAvailableSemaphore = VK_NULL_HANDLE;
     old.renderFinishedSemaphore = VK_NULL_HANDLE;
@@ -69,6 +75,11 @@ VkSemaphore const &Frame::getRenderFinishedSemaphore() const
 VkFence const &Frame::getInFlightFence() const
 {
     return inFlightFence;
+}
+
+DescriptorSet const &Frame::getDescriptorSet() const
+{
+    return descriptorSet;
 }
 
 void Frame::waitForReady(Device const *device) const
