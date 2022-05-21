@@ -1,9 +1,9 @@
 
-#include "configuration/pipeline.hpp"
+#include "swapchain/pipeline.hpp"
 
 #include "configuration/device.hpp"
 #include "configuration/shaderModule.hpp"
-#include "configuration/renderPass.hpp"
+#include "swapchain/renderPass.hpp"
 #include "vertex/vertex.hpp"
 #include "memory/descriptorSetLayout.hpp"
 #include "utility/check.hpp"

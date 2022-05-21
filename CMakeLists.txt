@@ -36,9 +36,7 @@ target_sources(${APP_NAME}
         src/configuration/device.cpp
         src/configuration/instance.cpp
         src/configuration/physicalDevice.cpp
-        src/configuration/pipeline.cpp
         src/configuration/queue.cpp
-        src/configuration/renderPass.cpp
         src/configuration/shaderModule.cpp
         src/configuration/surface.cpp
         src/configuration/window.cpp
@@ -51,6 +49,8 @@ target_sources(${APP_NAME}
         src/memory/descriptorSetLayout.cpp
         src/memory/voidBuffer.cpp
         src/swapchain/image.cpp
+        src/swapchain/pipeline.cpp
+        src/swapchain/renderPass.cpp
         src/swapchain/swapchain.cpp
         src/utility/io.cpp
         src/vertex/vertex.cpp

@@ -1,5 +1,5 @@
 
-#include "configuration/renderPass.hpp"
+#include "swapchain/renderPass.hpp"
 
 #include "configuration/device.hpp"
 #include "swapchain/swapchain.hpp"
